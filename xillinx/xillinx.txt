@@ -1,0 +1,3375 @@
+module top_module_reconfigureable_encryption(clk,reset,select_operation,data_input_des,key_input_des,key_input_3des,
+              data_input_aes,key_input_aes,data_output_des,data_output_aes);
+
+input  [64:1]  data_input_des,key_input_des,key_input_3des;
+input  [128:1] data_input_aes,key_input_aes;
+input  [1:0]   select_operation; 
+input  clk,reset;
+
+output [64:1]  data_output_des;
+output [128:1] data_output_aes;
+
+wire [64:1]  plain_text_des,key_out_des,key_out_3des,mid_output,cipher_text_des,cipher_text_3des,plain_text_3des;
+wire [128:1] plain_text_aes,key_out_aes,cipher_text_aes;
+wire [0:22]  control;
+wire         done_aes;
+wire [4:0]   pc_out;
+wire [1:0]   pro_pc_out;
+
+
+input_reg_des      aa(data_input_des, control[0], control[1], plain_text_des, clk);
+key_input_reg_des  bb(key_input_des, control[2],control[3], key_out_des, clk);
+key_input_reg_3des cc(key_input_3des, control[4], control[5], key_out_3des, clk);
+
+input_reg_aes      dd(data_input_aes, control[8], control[9],plain_text_aes, clk);
+key_input_reg_aes  ee(key_input_aes, control[6], control[7], key_out_aes, clk);
+
+output_reg_des_3des ff(cipher_text_des, control[10], control[11], data_output_des,clk);
+output_reg_aes      gg(cipher_text_aes, control[12], done_aes, data_output_aes,clk);
+
+pro_pc              hh(clk,pro_pc_out,reset);
+PC                  ii(pc_out,clk,pro_pc_out,reset,select_operation);
+control_unit        jj(pc_out,control,clk);
+
+mid                 kk(plain_text_des,data_out1,mid_output, clk);
+
+Des_Top             ll(clk, control[14], control[13], key_out_des, mid_output,cipher_text_des); 
+Des_decoder_Top     mm(clk, control[16], control[15], key_out_3des, plain_text_3des, cipher_text_3des); 
+
+
+aes_cipher_top      nn(clk, control[18], control[17], done_aes, key_out_aes, plain_text_aes, cipher_text_aes );
+A                   oo(cipher_text_des,cipher_text_3des, control[19], control[20],control[22], data_out1,clk, control[21], plain_text_3des);
+
+endmodule
+
+module key_input_reg_3des(data_in, ena, out, data_out, clk);
+output [64:1] data_out;
+input [64:1] data_in;
+input ena, out, clk;
+reg [64:1] data_out;
+reg [64:1]c;
+always@(clk)
+ if(ena==1 && out==0) 
+  begin
+  c = data_in;
+data_out=0;  
+end
+ else if(ena==0 && out==1)
+  begin
+  data_out = c;
+  end
+  else 
+  data_out = 0;
+endmodule
+
+module input_reg_aes(data_in, ena, out, data_out, clk);
+output [128:1] data_out;
+input [128:1] data_in;
+input ena, out, clk;
+reg [128:1] data_out;
+reg [128:1]c;
+always@(clk)
+ if(ena==1 && out==0) 
+  begin
+  c = data_in;
+data_out=0;  
+end
+ else if(ena==0 && out==1)
+  begin
+  data_out = c;
+  end
+  else 
+  data_out = 0;
+endmodule
+
+module key_input_reg_aes(data_in, ena, out, data_out, clk);
+output [128:1] data_out;
+input [128:1] data_in;
+input ena, out, clk;
+reg [128:1] data_out;
+reg [128:1]c;
+always@(clk)
+ if(ena==1 && out==0) 
+  begin
+  c = data_in;
+data_out=0;  
+end
+ else if(ena==0 && out==1)
+  begin
+  data_out = c;
+  end
+  else 
+  data_out = 0;
+endmodule
+
+module output_reg_aes(data_in, ena, write, data_out,clk);
+output [128:1] data_out;
+input [128:1] data_in;
+input ena, write,clk;
+reg [128:1] data_out,c;
+always@(clk)
+ if(write==1 && ena==0)
+  begin
+  c = data_in;
+data_out = 0;  
+end
+ else if(write==0 && ena==1)
+  begin
+  data_out = c;
+  end
+  else 
+  begin
+  data_out = 0;
+  end
+endmodule
+
+  module  input_reg_des(data_in, ena, out, data_out, clk);
+output [64:1] data_out;
+input [64:1] data_in;
+input ena, out, clk;
+reg [64:1] data_out;
+reg [64:1]c;
+always@(clk)
+ if(ena==1 && out==0) 
+  begin
+  c = data_in;
+data_out=0;  
+end
+ else if(ena==0 && out==1)
+  begin
+  data_out = c;
+  end
+  else 
+  data_out = 0;
+endmodule
+
+module key_input_reg_des(key_in, ena, out, key_out, clk);
+output [64:1] key_out;
+input [64:1] key_in;
+input ena, out, clk;
+reg [64:1] key_out;
+reg [64:1]c;
+always@(clk)
+ if(ena==1 && out==0) 
+  begin
+  c = key_in;
+key_out=0;  
+end
+ else if(ena==0 && out==1)
+  begin
+  key_out = c;
+  end
+  else 
+  key_out = 0;
+endmodule
+module output_reg_des_3des(data_in, ena, write, data_out,clk);
+output [64:1] data_out;
+input [64:1] data_in;
+input ena, write,clk;
+reg [64:1] data_out,c;
+always@(clk)
+ if(write==1 && ena==0)
+  begin
+  c = data_in;
+data_out = 0;  
+end
+ else if(write==0 && ena==1)
+  begin
+  data_out = c;
+  end
+  else 
+  begin
+  data_out = 0;
+  end
+endmodule
+
+module A(data_in1,data_in2, ena, write1,write2, data_out,clk, ena_des, data_out_des);
+output [64:1] data_out,data_out_des;
+input [64:1] data_in1,data_in2;
+input ena, write1,ena_des,clk,write2;
+reg [64:1] data_out, data_out_des, c;
+always@(clk)
+ if(write1==1 && ena==0 && ena_des==0 && write2==0)
+  begin
+  c = data_in1;
+data_out = 0;
+data_out_des=0;   
+end
+
+else if(write1==0 && ena==0 && ena_des==0 && write2==1)
+  begin
+  c = data_in2;
+data_out = 0;
+data_out_des=0;   
+end
+
+ else if(write1==0 && ena==1 && ena_des==0 && write2==0)
+  begin
+  data_out_des = c;
+data_out=0;  
+end
+  else if(write1==0 && ena==0 && ena_des==1 && write2==0)
+  begin
+  data_out = c;
+data_out_des = 0;  
+end
+  else 
+  begin
+  data_out = 0;
+data_out_des=0;   
+end
+ endmodule
+
+module pro_pc(clk,out,clr);
+input clk,clr;
+output [1:0]out;
+reg[1:0]out;
+
+always@(posedge clk)
+if(clr==1)
+begin
+out=0;
+end
+
+else
+begin
+out=out+1;
+end
+endmodule
+
+module PC(pc_out,clk,w,reset,select);
+input clk,reset;
+input [1:0] w,select;
+output [4:0] pc_out ;
+reg [4:0] pc_out, c ;
+
+always@(posedge clk)
+if(reset ==1) 
+begin
+   if(w==2'b11)
+  begin
+   c=0;
+   pc_out=c;
+  end
+
+  else if(select==2'b00)
+  begin
+  c=5'h0;
+  pc_out=c;
+  end
+  
+  else if(select==2'b01)
+  begin
+  c=5'h5;
+  pc_out=c;
+  end
+
+  else if(select==2'b10)
+  begin
+  c=5'h10;
+  pc_out=c;
+  end
+
+   else
+   begin
+   c=0;
+   pc_out=c;
+   end
+end
+
+else if(reset==0 && w==2'b11 && select==0)
+  begin
+if(c<5'b00_100)begin
+   c = c+1;
+   pc_out = c ;
+  end
+else
+begin
+c=5'b00_000;
+pc_out = c ;
+end
+end
+
+
+else if(reset==0 && w==2'b11 && select==2'b01)
+  begin
+if(c<5'hf)begin
+   c = c+1;
+   pc_out = c ;
+  end
+else
+begin
+c=5'h5;
+pc_out = c ;
+end
+end
+
+
+else if(reset==0 && w==2'b11 && select==2'b10)
+  begin
+if(c<5'h1d)begin
+   c = c+1;
+   pc_out = c ;
+  end
+else
+begin
+c=5'h10;
+pc_out = c ;
+end
+end
+
+else if (reset == 0 && w==0)
+begin
+pc_out=c;
+end
+else if (reset == 0 && w==1)
+begin
+pc_out=c;
+end
+else if (reset == 0 && w==2'b10)
+begin
+pc_out=c;
+end
+else
+begin
+c=c;
+pc_out=c;
+end
+
+endmodule
+
+module mid(input1,input2,mid_output, clk);
+input [64:1] input1,input2;
+output [64:1] mid_output;
+input clk;
+reg [64:1] mid_output;
+always@(clk)
+begin
+mid_output=input1|input2;
+end
+endmodule
+
+module Des_Top(CLK, RST, CHIP_SELECT_BAR,KEY_INPUT, PLAIN_TEXT, CIPHER_TEXT); 
+ 
+input   CLK; 
+ 
+input   RST; 
+ 
+input   CHIP_SELECT_BAR; 
+ 
+input   [64:1] KEY_INPUT; 
+ 
+input   [64 : 1]PLAIN_TEXT; 
+ 
+output  [64 : 1]CIPHER_TEXT; 
+ 
+wire    CLK; 
+ 
+wire    RST; 
+ 
+wire    CHIP_SELECT_BAR; 
+ 
+wire    KEY_INPUT; 
+ 
+wire    [64 : 1] PLAIN_TEXT; 
+ 
+wire    [64 : 1] CIPHER_TEXT; 
+ 
+wire    [48 : 1] KEY1,KEY2,KEY3,KEY4,KEY5,KEY6,KEY7,KEY8,KEY9,KEY10,KEY11,KEY12,KEY13,KEY14,KEY15, 
+                 KEY16; 
+					   
+wire    [32 : 1] LEFT1,LEFT2,LEFT3,LEFT4,LEFT5,LEFT6,LEFT7,LEFT8,LEFT9,LEFT10,LEFT11,LEFT12,LEFT13, 
+                 LEFT14,LEFT15,LEFT16; 
+ 
+wire    [32 : 1] RIGHT1,RIGHT2,RIGHT3,RIGHT4,RIGHT5,RIGHT6,RIGHT7,RIGHT8,RIGHT9,RIGHT10,RIGHT11, 
+                 RIGHT12,RIGHT13,RIGHT14,RIGHT15,RIGHT16;					   
+ 
+wire    [32 : 1] LEFT,RIGHT; 
+ 
+wire    [32 : 1] LEFT_SWAP,RIGHT_SWAP; 
+ 
+ Initial_Permutation ip ( 
+                         .CHIP_SELECT_BAR(CHIP_SELECT_BAR), 
+								 .PLAIN_TEXT(PLAIN_TEXT), 
+								 .LEFT(LEFT), 
+								 .RIGHT(RIGHT) 
+								); 
+								 
+ Key_Top key            ( 
+                         .CHIP_SELECT_BAR(CHIP_SELECT_BAR), 
+								 .KEY_INPUT(KEY_INPUT), 
+								 .KEY1(KEY1), 
+								 .KEY2(KEY2), 
+								 .KEY3(KEY3), 
+								 .KEY4(KEY4), 
+								 .KEY5(KEY5), 
+								 .KEY6(KEY6), 
+								 .KEY7(KEY7), 
+								 .KEY8(KEY8), 
+								 .KEY9(KEY9), 
+								 .KEY10(KEY10), 
+								 .KEY11(KEY11), 
+								 .KEY12(KEY12), 
+								 .KEY13(KEY13), 
+								 .KEY14(KEY14), 
+								 .KEY15(KEY15), 
+								 .KEY16(KEY16) 
+                        ); 
+ 
+ Round1 round1          ( 
+                        .CLK(CLK), 
+								.RST(RST), 
+								.LEFT(LEFT), 
+								.RIGHT(RIGHT), 
+								.KEY(KEY1), 
+								.LEFT1(LEFT1), 
+								.RIGHT1(RIGHT1) 
+								);								 
+								 
+ Round1 round2          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT1),
+								.RIGHT(RIGHT1),
+								.KEY(KEY2),
+								.LEFT1(LEFT2),
+								.RIGHT1(RIGHT2)
+								);							 
+ 
+ Round1 round3          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT2),
+								.RIGHT(RIGHT2),
+								.KEY(KEY3),
+								.LEFT1(LEFT3),
+								.RIGHT1(RIGHT3)
+								);							 
+ 
+ Round1 round4          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT3),
+								.RIGHT(RIGHT3),
+								.KEY(KEY4),
+								.LEFT1(LEFT4),
+								.RIGHT1(RIGHT4)
+								);							 
+ 
+ Round1 round5          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT4),
+								.RIGHT(RIGHT4),
+								.KEY(KEY5),
+								.LEFT1(LEFT5),
+								.RIGHT1(RIGHT5)
+								);							 
+ 
+ Round1 round6          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT5),
+								.RIGHT(RIGHT5),
+								.KEY(KEY6),
+								.LEFT1(LEFT6),
+								.RIGHT1(RIGHT6)
+								);							 
+ 
+ Round1 round7          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT6),
+								.RIGHT(RIGHT6),
+								.KEY(KEY7),
+								.LEFT1(LEFT7),
+								.RIGHT1(RIGHT7)
+								);							 
+ 
+ Round1 round8          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT7),
+								.RIGHT(RIGHT7),
+								.KEY(KEY8),
+								.LEFT1(LEFT8),
+								.RIGHT1(RIGHT8)
+								);							 
+ 
+ Round1 round9          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT8),
+								.RIGHT(RIGHT8),
+								.KEY(KEY9),
+								.LEFT1(LEFT9),
+								.RIGHT1(RIGHT9)
+								);							 
+ 
+ Round1 round10         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT9),
+								.RIGHT(RIGHT9),
+								.KEY(KEY10),
+								.LEFT1(LEFT10),
+								.RIGHT1(RIGHT10)
+								);							 
+ 
+ Round1 round11         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT10),
+								.RIGHT(RIGHT10),
+								.KEY(KEY11),
+								.LEFT1(LEFT11),
+								.RIGHT1(RIGHT11)
+								);							 
+ 
+ Round1 round12         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT11),
+								.RIGHT(RIGHT11),
+								.KEY(KEY12),
+								.LEFT1(LEFT12),
+								.RIGHT1(RIGHT12)
+								);							 
+ 
+ Round1 round13         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT12),
+								.RIGHT(RIGHT12),
+								.KEY(KEY13),
+								.LEFT1(LEFT13),
+								.RIGHT1(RIGHT13)
+								);							 
+ 
+ Round1 round14         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT13),
+								.RIGHT(RIGHT13),
+								.KEY(KEY14),
+								.LEFT1(LEFT14),
+								.RIGHT1(RIGHT14)
+								);							 
+ 
+ Round1 round15          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT14),
+								.RIGHT(RIGHT14),
+								.KEY(KEY15),
+								.LEFT1(LEFT15),
+								.RIGHT1(RIGHT15)
+								);							 
+ 
+ Round1 round16         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT15),
+								.RIGHT(RIGHT15),
+								.KEY(KEY16),
+								.LEFT1(LEFT16),
+								.RIGHT1(RIGHT16)
+								);							 
+								 
+ Swap   swap            ( 
+                         .LEFT16(LEFT16), 
+								 .RIGHT16(RIGHT16), 
+								 .LEFT_SWAP(LEFT_SWAP), 
+								 .RIGHT_SWAP(RIGHT_SWAP) 
+                         ); 
+ 
+ Inverse_Initial_Permutation iip ( 
+                                  .LEFT_SWAP(LEFT_SWAP), 
+											 .RIGHT_SWAP(RIGHT_SWAP), 
+											 .CIPHER_TEXT(CIPHER_TEXT) 
+											 ); 
+ 
+ endmodule 
+
+module Expansion_Permutation(RIGHT, EXPANSION_PERMUTATION);
+    
+    input  [32 : 1] RIGHT; 
+	
+	 output [48 : 1] EXPANSION_PERMUTATION;
+	 
+	 wire   [32 : 1] RIGHT;
+	 
+	 reg    [48 : 1] EXPANSION_PERMUTATION;
+	 
+	
+    always @(RIGHT)
+
+        begin
+
+           EXPANSION_PERMUTATION[1]   = RIGHT[32];
+           EXPANSION_PERMUTATION[2]   = RIGHT[1];		  
+           EXPANSION_PERMUTATION[3]   = RIGHT[2];		  			  
+	        EXPANSION_PERMUTATION[4]   = RIGHT[3];		  
+           EXPANSION_PERMUTATION[5]   = RIGHT[4];
+           EXPANSION_PERMUTATION[6]   = RIGHT[5];		  
+           EXPANSION_PERMUTATION[7]   = RIGHT[4];
+           EXPANSION_PERMUTATION[8]   = RIGHT[5];		  
+           EXPANSION_PERMUTATION[9]   = RIGHT[6];
+           EXPANSION_PERMUTATION[10]  = RIGHT[7];		  
+			  EXPANSION_PERMUTATION[11]  = RIGHT[8];		  
+			  EXPANSION_PERMUTATION[12]  = RIGHT[9];		  
+			  EXPANSION_PERMUTATION[13]  = RIGHT[8];		  
+			  EXPANSION_PERMUTATION[14]  = RIGHT[9];		  
+			  EXPANSION_PERMUTATION[15]  = RIGHT[10];		  
+			  EXPANSION_PERMUTATION[16]  = RIGHT[11];		  
+			  EXPANSION_PERMUTATION[17]  = RIGHT[12];		  
+			  EXPANSION_PERMUTATION[18]  = RIGHT[13];		  
+			  EXPANSION_PERMUTATION[19]  = RIGHT[12];		  
+			  EXPANSION_PERMUTATION[20]  = RIGHT[13];		  
+			  EXPANSION_PERMUTATION[21]  = RIGHT[14];		  
+			  EXPANSION_PERMUTATION[22]  = RIGHT[15];		  
+			  EXPANSION_PERMUTATION[23]  = RIGHT[16];		  
+			  EXPANSION_PERMUTATION[24]  = RIGHT[17];		  
+			  EXPANSION_PERMUTATION[25]  = RIGHT[16];		  
+			  EXPANSION_PERMUTATION[26]  = RIGHT[17];		  
+			  EXPANSION_PERMUTATION[27]  = RIGHT[18];		  
+			  EXPANSION_PERMUTATION[28]  = RIGHT[19];		  
+			  EXPANSION_PERMUTATION[29]  = RIGHT[20];		  
+			  EXPANSION_PERMUTATION[30]  = RIGHT[21];		  
+			  EXPANSION_PERMUTATION[31]  = RIGHT[20];		  
+			  EXPANSION_PERMUTATION[32]  = RIGHT[21];		
+			  EXPANSION_PERMUTATION[33]  = RIGHT[22];	
+           EXPANSION_PERMUTATION[34]  = RIGHT[23];		  
+           EXPANSION_PERMUTATION[35]  = RIGHT[24];
+           EXPANSION_PERMUTATION[36]  = RIGHT[25];		  
+           EXPANSION_PERMUTATION[37]  = RIGHT[24];		  			  
+			  EXPANSION_PERMUTATION[38]  = RIGHT[25];		  
+			  EXPANSION_PERMUTATION[39]  = RIGHT[26];		  
+			  EXPANSION_PERMUTATION[40]  = RIGHT[27];		  
+			  EXPANSION_PERMUTATION[41]  = RIGHT[28];		  
+			  EXPANSION_PERMUTATION[42]  = RIGHT[29];		  
+			  EXPANSION_PERMUTATION[43]  = RIGHT[28];		  
+			  EXPANSION_PERMUTATION[44]  = RIGHT[29];		  
+			  EXPANSION_PERMUTATION[45]  = RIGHT[30];		  
+			  EXPANSION_PERMUTATION[46]  = RIGHT[31];		  
+			  EXPANSION_PERMUTATION[47]  = RIGHT[32];		  
+			  EXPANSION_PERMUTATION[48]  = RIGHT[1];
+
+       end
+		 
+endmodule
+
+module Initial_Permutation(PLAIN_TEXT, CHIP_SELECT_BAR, LEFT, RIGHT);
+    
+	 input    CHIP_SELECT_BAR;                      //It is input which works as a chip
+	                                                //select
+	 
+	 input    [64 : 1] PLAIN_TEXT ;                 //64-bit message input 
+	  
+	 output   [32 : 1] LEFT; 
+	  
+	 output   [32 : 1] RIGHT;
+    
+	 wire     CHIP_SELECT_BAR;
+    
+	 wire     [64 : 1] PLAIN_TEXT;
+	 
+	 wire     [32 : 1] LEFT; 
+	  
+	 wire     [32 : 1] RIGHT; 
+	  
+	 reg      [64 : 1] INITIAL_PERMUTATION_OUTPUT; 
+	  
+	 assign   LEFT   = INITIAL_PERMUTATION_OUTPUT[64 : 33]; 
+	  
+	 assign   RIGHT  = INITIAL_PERMUTATION_OUTPUT[32 : 1];
+	 
+	 always @ (CHIP_SELECT_BAR)                    //Chip select signal.If it is low then and
+	                                               //then this block works otherwise output
+																  //remains in high impedence state(Z-state).
+	 
+	       begin
+			 
+           if(CHIP_SELECT_BAR == 0)			 
+			 
+	         begin
+				 
+         	 INITIAL_PERMUTATION_OUTPUT [1]  = PLAIN_TEXT [58];
+				 INITIAL_PERMUTATION_OUTPUT [2]  = PLAIN_TEXT [50];
+				 INITIAL_PERMUTATION_OUTPUT [3]  = PLAIN_TEXT [42];
+				 INITIAL_PERMUTATION_OUTPUT [4]  = PLAIN_TEXT [34];
+				 INITIAL_PERMUTATION_OUTPUT [5]  = PLAIN_TEXT [26];
+				 INITIAL_PERMUTATION_OUTPUT [6]  = PLAIN_TEXT [18];
+				 INITIAL_PERMUTATION_OUTPUT [7]  = PLAIN_TEXT [10];
+				 INITIAL_PERMUTATION_OUTPUT [8]  = PLAIN_TEXT [2];
+				 INITIAL_PERMUTATION_OUTPUT [9]  = PLAIN_TEXT [60];
+				 INITIAL_PERMUTATION_OUTPUT [10] = PLAIN_TEXT [52];
+				 INITIAL_PERMUTATION_OUTPUT [11] = PLAIN_TEXT [44];
+				 INITIAL_PERMUTATION_OUTPUT [12] = PLAIN_TEXT [36];
+				 INITIAL_PERMUTATION_OUTPUT [13] = PLAIN_TEXT [28];
+				 INITIAL_PERMUTATION_OUTPUT [14] = PLAIN_TEXT [20];
+				 INITIAL_PERMUTATION_OUTPUT [15] = PLAIN_TEXT [12];
+				 INITIAL_PERMUTATION_OUTPUT [16] = PLAIN_TEXT [4];
+				 INITIAL_PERMUTATION_OUTPUT [17] = PLAIN_TEXT [62];
+				 INITIAL_PERMUTATION_OUTPUT [18] = PLAIN_TEXT [54];
+				 INITIAL_PERMUTATION_OUTPUT [19] = PLAIN_TEXT [46];
+				 INITIAL_PERMUTATION_OUTPUT [20] = PLAIN_TEXT [38];
+				 INITIAL_PERMUTATION_OUTPUT [21] = PLAIN_TEXT [30];
+				 INITIAL_PERMUTATION_OUTPUT [22] = PLAIN_TEXT [22];
+				 INITIAL_PERMUTATION_OUTPUT [23] = PLAIN_TEXT [14];
+				 INITIAL_PERMUTATION_OUTPUT [24] = PLAIN_TEXT [6];
+				 INITIAL_PERMUTATION_OUTPUT [25] = PLAIN_TEXT [64];
+				 INITIAL_PERMUTATION_OUTPUT [26] = PLAIN_TEXT [56];
+				 INITIAL_PERMUTATION_OUTPUT [27] = PLAIN_TEXT [48];
+				 INITIAL_PERMUTATION_OUTPUT [28] = PLAIN_TEXT [40];
+				 INITIAL_PERMUTATION_OUTPUT [29] = PLAIN_TEXT [32];
+				 INITIAL_PERMUTATION_OUTPUT [30] = PLAIN_TEXT [24];
+				 INITIAL_PERMUTATION_OUTPUT [31] = PLAIN_TEXT [16];
+				 INITIAL_PERMUTATION_OUTPUT [32] = PLAIN_TEXT [8];
+				 INITIAL_PERMUTATION_OUTPUT [33] = PLAIN_TEXT [57];
+				 INITIAL_PERMUTATION_OUTPUT [34] = PLAIN_TEXT [49];
+				 INITIAL_PERMUTATION_OUTPUT [35] = PLAIN_TEXT [41];
+				 INITIAL_PERMUTATION_OUTPUT [36] = PLAIN_TEXT [33];
+				 INITIAL_PERMUTATION_OUTPUT [37] = PLAIN_TEXT [25];
+				 INITIAL_PERMUTATION_OUTPUT [38] = PLAIN_TEXT [17];
+				 INITIAL_PERMUTATION_OUTPUT [39] = PLAIN_TEXT [9];
+				 INITIAL_PERMUTATION_OUTPUT [40] = PLAIN_TEXT [1];
+				 INITIAL_PERMUTATION_OUTPUT [41] = PLAIN_TEXT [59];
+				 INITIAL_PERMUTATION_OUTPUT [42] = PLAIN_TEXT [51];
+				 INITIAL_PERMUTATION_OUTPUT [43] = PLAIN_TEXT [43];
+				 INITIAL_PERMUTATION_OUTPUT [44] = PLAIN_TEXT [35];
+				 INITIAL_PERMUTATION_OUTPUT [45] = PLAIN_TEXT [27];
+				 INITIAL_PERMUTATION_OUTPUT [46] = PLAIN_TEXT [19];
+				 INITIAL_PERMUTATION_OUTPUT [47] = PLAIN_TEXT [11];
+				 INITIAL_PERMUTATION_OUTPUT [48] = PLAIN_TEXT [3];
+				 INITIAL_PERMUTATION_OUTPUT [49] = PLAIN_TEXT [61];
+				 INITIAL_PERMUTATION_OUTPUT [50] = PLAIN_TEXT [53];
+				 INITIAL_PERMUTATION_OUTPUT [51] = PLAIN_TEXT [45];
+				 INITIAL_PERMUTATION_OUTPUT [52] = PLAIN_TEXT [37];
+				 INITIAL_PERMUTATION_OUTPUT [53] = PLAIN_TEXT [29];
+				 INITIAL_PERMUTATION_OUTPUT [54] = PLAIN_TEXT [21];
+				 INITIAL_PERMUTATION_OUTPUT [55] = PLAIN_TEXT [13];
+				 INITIAL_PERMUTATION_OUTPUT [56] = PLAIN_TEXT [5];
+				 INITIAL_PERMUTATION_OUTPUT [57] = PLAIN_TEXT [63];
+				 INITIAL_PERMUTATION_OUTPUT [58] = PLAIN_TEXT [55];
+				 INITIAL_PERMUTATION_OUTPUT [59] = PLAIN_TEXT [47];
+				 INITIAL_PERMUTATION_OUTPUT [60] = PLAIN_TEXT [39];
+				 INITIAL_PERMUTATION_OUTPUT [61] = PLAIN_TEXT [31];
+				 INITIAL_PERMUTATION_OUTPUT [62] = PLAIN_TEXT [23];
+				 INITIAL_PERMUTATION_OUTPUT [63] = PLAIN_TEXT [15];
+				 INITIAL_PERMUTATION_OUTPUT [64] = PLAIN_TEXT [7];
+				 
+				end
+				 
+			else
+			
+			   begin
+			
+			    INITIAL_PERMUTATION_OUTPUT [64 : 1] = 64'bZ;
+				 
+				end
+				 
+	  end				
+				 
+	 endmodule
+
+module Inverse_Initial_Permutation(RIGHT_SWAP, LEFT_SWAP, CIPHER_TEXT); 
+ 
+input   [32 : 1]RIGHT_SWAP; 
+ 
+input   [32 : 1]LEFT_SWAP; 
+ 
+output  [64 : 1]CIPHER_TEXT; 
+ 
+wire    [32 : 1]RIGHT_SWAP;
+ 
+wire    [32 : 1]LEFT_SWAP; 
+		   
+reg     [64 : 1]CIPHER_TEXT; 
+ 
+wire    [64 : 1]TEMP; 
+ 
+assign  TEMP  = {LEFT_SWAP,RIGHT_SWAP}; 
+ 
+always @(TEMP) 
+ 
+  begin  
+    
+	CIPHER_TEXT[1]  = TEMP[40]; 
+	CIPHER_TEXT[2]  = TEMP[8]; 
+	CIPHER_TEXT[3]  = TEMP[48]; 
+	CIPHER_TEXT[4]  = TEMP[16]; 
+	CIPHER_TEXT[5]  = TEMP[56]; 
+	CIPHER_TEXT[6]  = TEMP[24]; 
+	CIPHER_TEXT[7]  = TEMP[64]; 
+	CIPHER_TEXT[8]  = TEMP[32]; 
+	CIPHER_TEXT[9]  = TEMP[39]; 
+	CIPHER_TEXT[10] = TEMP[7]; 
+	CIPHER_TEXT[11] = TEMP[47]; 
+	CIPHER_TEXT[12] = TEMP[15]; 
+	CIPHER_TEXT[13] = TEMP[55]; 
+	CIPHER_TEXT[14] = TEMP[23]; 
+	CIPHER_TEXT[15] = TEMP[63]; 
+	CIPHER_TEXT[16] = TEMP[31]; 
+	CIPHER_TEXT[17] = TEMP[38]; 
+	CIPHER_TEXT[18] = TEMP[6]; 
+	CIPHER_TEXT[19] = TEMP[46]; 
+	CIPHER_TEXT[20] = TEMP[14]; 
+	CIPHER_TEXT[21] = TEMP[54]; 
+	CIPHER_TEXT[22] = TEMP[22]; 
+	CIPHER_TEXT[23] = TEMP[62]; 
+	CIPHER_TEXT[24] = TEMP[30]; 
+	CIPHER_TEXT[25] = TEMP[37]; 
+	CIPHER_TEXT[26] = TEMP[5]; 
+	CIPHER_TEXT[27] = TEMP[45]; 
+	CIPHER_TEXT[28] = TEMP[13]; 
+	CIPHER_TEXT[29] = TEMP[53]; 
+	CIPHER_TEXT[30] = TEMP[21]; 
+	CIPHER_TEXT[31] = TEMP[61]; 
+	CIPHER_TEXT[32] = TEMP[29]; 
+	CIPHER_TEXT[33] = TEMP[36]; 
+	CIPHER_TEXT[34] = TEMP[4]; 
+	CIPHER_TEXT[35] = TEMP[44]; 
+	CIPHER_TEXT[36] = TEMP[12]; 
+	CIPHER_TEXT[37] = TEMP[52]; 
+	CIPHER_TEXT[38] = TEMP[20]; 
+	CIPHER_TEXT[39] = TEMP[60]; 
+	CIPHER_TEXT[40] = TEMP[28]; 
+	CIPHER_TEXT[41] = TEMP[35]; 
+	CIPHER_TEXT[42] = TEMP[3]; 
+	CIPHER_TEXT[43] = TEMP[43]; 
+	CIPHER_TEXT[44] = TEMP[11]; 
+	CIPHER_TEXT[45] = TEMP[51]; 
+	CIPHER_TEXT[46] = TEMP[19]; 
+	CIPHER_TEXT[47] = TEMP[59]; 
+	CIPHER_TEXT[48] = TEMP[27]; 
+	CIPHER_TEXT[49] = TEMP[34]; 
+	CIPHER_TEXT[50] = TEMP[2]; 
+	CIPHER_TEXT[51] = TEMP[42]; 
+	CIPHER_TEXT[52] = TEMP[10]; 
+	CIPHER_TEXT[53] = TEMP[50]; 
+	CIPHER_TEXT[54] = TEMP[18]; 
+	CIPHER_TEXT[55] = TEMP[58]; 
+	CIPHER_TEXT[56] = TEMP[26]; 
+	CIPHER_TEXT[57] = TEMP[33]; 
+	CIPHER_TEXT[58] = TEMP[1]; 
+	CIPHER_TEXT[59] = TEMP[41]; 
+	CIPHER_TEXT[60] = TEMP[9]; 
+	CIPHER_TEXT[61] = TEMP[49]; 
+	CIPHER_TEXT[62] = TEMP[17]; 
+	CIPHER_TEXT[63] = TEMP[57]; 
+	CIPHER_TEXT[64] = TEMP[25]; 
+	 
+ end
+endmodule
+
+module Key_Generation(CHIP_SELECT_BAR, KEY, LEFT_CIRCULAR_SHIFT1, RIGHT_CIRCULAR_SHIFT1);
+
+    input  CHIP_SELECT_BAR;
+	 
+	 input  [64:1]KEY;
+	   
+	 output [28 : 1] LEFT_CIRCULAR_SHIFT1;
+	 
+	 output [28 : 1] RIGHT_CIRCULAR_SHIFT1;
+	 
+	 wire   CHIP_SELECT_BAR;
+	 
+	
+	 
+	 wire   [28 : 1] LEFT_CIRCULAR_SHIFT1;
+	 
+	wire   [28 : 1] RIGHT_CIRCULAR_SHIFT1;
+
+
+    	  
+	 reg    [56 : 1] OUTPUT_PERMUTATION_CHOICE1;
+	 
+	 wire    [64 : 1] KEY;
+
+	 assign RIGHT_CIRCULAR_SHIFT1 = OUTPUT_PERMUTATION_CHOICE1[28 : 1];
+	 
+	 assign LEFT_CIRCULAR_SHIFT1  = OUTPUT_PERMUTATION_CHOICE1[56 : 29];
+
+   
+	   
+	 
+					 
+     always @(CHIP_SELECT_BAR or KEY)
+ 
+            begin
+								
+   				  if(CHIP_SELECT_BAR == 0)
+								  
+				   		begin
+									
+									 OUTPUT_PERMUTATION_CHOICE1[1] = KEY[57];
+									 OUTPUT_PERMUTATION_CHOICE1[2] = KEY[49];
+									 OUTPUT_PERMUTATION_CHOICE1[3] = KEY[41];
+									 OUTPUT_PERMUTATION_CHOICE1[4] = KEY[33];
+									 OUTPUT_PERMUTATION_CHOICE1[5] = KEY[25];
+									 OUTPUT_PERMUTATION_CHOICE1[6] = KEY[17];
+									 OUTPUT_PERMUTATION_CHOICE1[7] = KEY[9];
+									 OUTPUT_PERMUTATION_CHOICE1[8] = KEY[1];
+									 OUTPUT_PERMUTATION_CHOICE1[9] = KEY[58];
+									 OUTPUT_PERMUTATION_CHOICE1[10] = KEY[50];
+									 OUTPUT_PERMUTATION_CHOICE1[11] = KEY[42];
+									 OUTPUT_PERMUTATION_CHOICE1[12] = KEY[34];
+									 OUTPUT_PERMUTATION_CHOICE1[13] = KEY[26];
+									 OUTPUT_PERMUTATION_CHOICE1[14] = KEY[18];
+									 OUTPUT_PERMUTATION_CHOICE1[15] = KEY[10];
+									 OUTPUT_PERMUTATION_CHOICE1[16] = KEY[2];
+									 OUTPUT_PERMUTATION_CHOICE1[17] = KEY[59];
+									 OUTPUT_PERMUTATION_CHOICE1[18] = KEY[51];
+									 OUTPUT_PERMUTATION_CHOICE1[19] = KEY[43];
+									 OUTPUT_PERMUTATION_CHOICE1[20] = KEY[35];
+									 OUTPUT_PERMUTATION_CHOICE1[21] = KEY[27];
+									 OUTPUT_PERMUTATION_CHOICE1[22] = KEY[19];
+									 OUTPUT_PERMUTATION_CHOICE1[23] = KEY[11];
+									 OUTPUT_PERMUTATION_CHOICE1[24] = KEY[3];
+									 OUTPUT_PERMUTATION_CHOICE1[25] = KEY[60];
+									 OUTPUT_PERMUTATION_CHOICE1[26] = KEY[52];
+									 OUTPUT_PERMUTATION_CHOICE1[27] = KEY[44];
+									 OUTPUT_PERMUTATION_CHOICE1[28] = KEY[36];
+									 OUTPUT_PERMUTATION_CHOICE1[29] = KEY[63];
+									 OUTPUT_PERMUTATION_CHOICE1[30] = KEY[55];
+									 OUTPUT_PERMUTATION_CHOICE1[31] = KEY[47];
+									 OUTPUT_PERMUTATION_CHOICE1[32] = KEY[39];
+									 OUTPUT_PERMUTATION_CHOICE1[33] = KEY[31];
+									 OUTPUT_PERMUTATION_CHOICE1[34] = KEY[23];
+									 OUTPUT_PERMUTATION_CHOICE1[35] = KEY[15];
+									 OUTPUT_PERMUTATION_CHOICE1[36] = KEY[7];
+									 OUTPUT_PERMUTATION_CHOICE1[37] = KEY[62];
+									 OUTPUT_PERMUTATION_CHOICE1[38] = KEY[54];
+									 OUTPUT_PERMUTATION_CHOICE1[39] = KEY[46];
+									 OUTPUT_PERMUTATION_CHOICE1[40] = KEY[38];
+									 OUTPUT_PERMUTATION_CHOICE1[41] = KEY[30];
+									 OUTPUT_PERMUTATION_CHOICE1[42] = KEY[22];
+									 OUTPUT_PERMUTATION_CHOICE1[43] = KEY[14];
+									 OUTPUT_PERMUTATION_CHOICE1[44] = KEY[6];
+									 OUTPUT_PERMUTATION_CHOICE1[45] = KEY[61];
+									 OUTPUT_PERMUTATION_CHOICE1[46] = KEY[53];
+									 OUTPUT_PERMUTATION_CHOICE1[47] = KEY[45];
+									 OUTPUT_PERMUTATION_CHOICE1[48] = KEY[37];
+									 OUTPUT_PERMUTATION_CHOICE1[49] = KEY[29];
+									 OUTPUT_PERMUTATION_CHOICE1[50] = KEY[21];
+									 OUTPUT_PERMUTATION_CHOICE1[51] = KEY[13];
+									 OUTPUT_PERMUTATION_CHOICE1[52] = KEY[5];
+									 OUTPUT_PERMUTATION_CHOICE1[53] = KEY[28];
+									 OUTPUT_PERMUTATION_CHOICE1[54] = KEY[20];
+									 OUTPUT_PERMUTATION_CHOICE1[55] = KEY[12];
+									 OUTPUT_PERMUTATION_CHOICE1[56] = KEY[4];
+									 
+
+								end	 
+								
+						 else
+								 
+						      begin
+
+                            OUTPUT_PERMUTATION_CHOICE1 = 64'bZ;								 
+									 
+							   end
+									
+					end
+
+      endmodule
+		
+module Key_Top(CHIP_SELECT_BAR, KEY_INPUT, KEY1, KEY2, KEY3, KEY4, KEY5, KEY6, KEY7, KEY8, KEY9, KEY10, KEY11 ,KEY12,
+					KEY13, KEY14, KEY15, KEY16);
+
+  input   CHIP_SELECT_BAR;
+  input   [64:1]KEY_INPUT;
+
+  output  [48 : 1]  KEY1,KEY2,KEY3,KEY4,KEY5,KEY6,KEY7,KEY8,KEY9,KEY10,KEY11,KEY12,KEY13,KEY14,
+                    KEY15, KEY16;
+						  
+ // wire    [28 : 1]  LEFT_CIRCULAR_SHIFT1;						  
+  
+ // wire    [28 : 1]  RIGHT_CIRCULAR_SHIFT1;
+  
+ // wire    [28 : 1]  LEFTHALF_CIRCULAR_SHIFT1; 
+  
+ 
+ 
+  //wire    [28 : 1]  RIGHTHALF_CIRCULAR_SHIFT1;  
+  
+  wire    [48 : 1]  KEY1,KEY2,KEY3,KEY4,KEY5,KEY6,KEY7,KEY8,KEY9,KEY10,KEY11,KEY12,KEY13,KEY14,
+                    KEY15,KEY16;
+  
+  wire    [28 : 1]  LEFT_HALF0,LEFT_HALF1,LEFT_HALF2,LEFT_HALF3,LEFT_HALF4,LEFT_HALF5,LEFT_HALF6,LEFT_HALF7,
+                    LEFT_HALF8,LEFT_HALF9,LEFT_HALF10,LEFT_HALF11,LEFT_HALF12,LEFT_HALF13,LEFT_HALF14,
+						  LEFT_HALF15,LEFT_HALF16;
+  
+  wire    [28 : 1]  RIGHT_HALF0,RIGHT_HALF1,RIGHT_HALF2,RIGHT_HALF3,RIGHT_HALF4,RIGHT_HALF5,RIGHT_HALF6,RIGHT_HALF7,
+                    RIGHT_HALF8,RIGHT_HALF9,RIGHT_HALF10,RIGHT_HALF11,RIGHT_HALF12,RIGHT_HALF13,RIGHT_HALF14,
+						  RIGHT_HALF15,RIGHT_HALF16;
+						  
+ // wire    [48 : 1]  SUBKEY;						  
+  
+   Key_Generation key_gen (
+	                        .CHIP_SELECT_BAR(CHIP_SELECT_BAR),
+                           .KEY(KEY_INPUT),
+                           .LEFT_CIRCULAR_SHIFT1(LEFT_HALF0),
+								   .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF0)
+									);						  
+								  
+    assign LEFT_HALF1  = {LEFT_HALF0[27 : 1],LEFT_HALF0[28]};
+    assign LEFT_HALF2  = {LEFT_HALF1[27 : 1],LEFT_HALF1[28]};
+    assign LEFT_HALF3  = {LEFT_HALF2[26 : 1],LEFT_HALF2[28],LEFT_HALF2[27]};
+    assign LEFT_HALF4  = {LEFT_HALF3[26 : 1],LEFT_HALF3[28],LEFT_HALF3[27]};
+	 assign LEFT_HALF5  = {LEFT_HALF4[26 : 1],LEFT_HALF4[28],LEFT_HALF4[27]};
+    assign LEFT_HALF6  = {LEFT_HALF5[26 : 1],LEFT_HALF5[28],LEFT_HALF5[27]};
+	 assign LEFT_HALF7  = {LEFT_HALF6[26 : 1],LEFT_HALF6[28],LEFT_HALF6[27]};
+	 assign LEFT_HALF8  = {LEFT_HALF7[26 : 1],LEFT_HALF7[28],LEFT_HALF7[27]};
+	 assign LEFT_HALF9  = {LEFT_HALF8[27 : 1],LEFT_HALF8[28]};
+	 assign LEFT_HALF10 = {LEFT_HALF9[26 : 1],LEFT_HALF9[28],LEFT_HALF9[27]};  
+	 assign LEFT_HALF11 = {LEFT_HALF10[26 : 1],LEFT_HALF10[28],LEFT_HALF10[27]};
+	 assign LEFT_HALF12 = {LEFT_HALF11[26 : 1],LEFT_HALF11[28],LEFT_HALF11[27]};
+	 assign LEFT_HALF13 = {LEFT_HALF12[26 : 1],LEFT_HALF12[28],LEFT_HALF12[27]};
+	 assign LEFT_HALF14 = {LEFT_HALF13[26 : 1],LEFT_HALF13[28],LEFT_HALF13[27]};
+	 assign LEFT_HALF15 = {LEFT_HALF14[26 : 1],LEFT_HALF14[28],LEFT_HALF14[27]};
+	 assign LEFT_HALF16 = {LEFT_HALF15[27 : 1],LEFT_HALF15[28]};
+	 
+	 assign RIGHT_HALF1  = {RIGHT_HALF0[27 : 1],RIGHT_HALF0[28]};
+	 assign RIGHT_HALF2  = {RIGHT_HALF1[27 : 1],RIGHT_HALF1[28]};
+	 assign RIGHT_HALF3  = {RIGHT_HALF2[26 : 1],RIGHT_HALF2[28],RIGHT_HALF2[27]};
+	 assign RIGHT_HALF4  = {RIGHT_HALF3[26 : 1],RIGHT_HALF3[28],RIGHT_HALF3[27]};
+	 assign RIGHT_HALF5  = {RIGHT_HALF4[26 : 1],RIGHT_HALF4[28],RIGHT_HALF4[27]};
+	 assign RIGHT_HALF6  = {RIGHT_HALF5[26 : 1],RIGHT_HALF5[28],RIGHT_HALF5[27]};
+	 assign RIGHT_HALF7  = {RIGHT_HALF6[26 : 1],RIGHT_HALF6[28],RIGHT_HALF6[27]};
+	 assign RIGHT_HALF8  = {RIGHT_HALF7[26 : 1],RIGHT_HALF7[28],RIGHT_HALF7[27]};
+	 assign RIGHT_HALF9  = {RIGHT_HALF8[27 : 1],RIGHT_HALF8[28]};
+	 assign RIGHT_HALF10 = {RIGHT_HALF9[26 : 1],RIGHT_HALF9[28],RIGHT_HALF9[27]};
+	 assign RIGHT_HALF11 = {RIGHT_HALF10[26 : 1],RIGHT_HALF10[28],RIGHT_HALF10[27]};
+	 assign RIGHT_HALF12 = {RIGHT_HALF11[26 : 1],RIGHT_HALF11[28],RIGHT_HALF11[27]};
+	 assign RIGHT_HALF13 = {RIGHT_HALF12[26 : 1],RIGHT_HALF12[28],RIGHT_HALF12[27]};
+	 assign RIGHT_HALF14 = {RIGHT_HALF13[26 : 1],RIGHT_HALF13[28],RIGHT_HALF13[27]};
+	 assign RIGHT_HALF15 = {RIGHT_HALF14[26 : 1],RIGHT_HALF14[28],RIGHT_HALF14[27]};
+	 assign RIGHT_HALF16 = {RIGHT_HALF15[27 : 1],RIGHT_HALF15[28]};
+	 
+	 
+	 Permuted_Choice2 u1 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF1),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF1),
+								  .SUBKEY(KEY1)
+								  
+								);
+	 
+	 
+	 Permuted_Choice2 u2 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF2),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF2),
+								  .SUBKEY(KEY2)
+								  
+								);
+	 
+	 Permuted_Choice2 u3 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF3),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF3),
+								  .SUBKEY(KEY3)
+								  
+								);
+	 
+	 
+	 Permuted_Choice2 u4 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF4),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF4),
+								  .SUBKEY(KEY4)
+								  
+								);
+								
+    Permuted_Choice2 u5 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF5),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF5),
+								  .SUBKEY(KEY5)
+								  
+								);
+	 
+    Permuted_Choice2 u6 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF6),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF6),
+								  .SUBKEY(KEY6)
+								  
+								);
+	 
+    Permuted_Choice2 u7 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF7),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF7),
+								  .SUBKEY(KEY7)
+								  
+								);
+	 
+    Permuted_Choice2 u8 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF8),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF8),
+								  .SUBKEY(KEY8)
+								  
+								);
+	 
+    Permuted_Choice2 u9 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF9),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF9),
+								  .SUBKEY(KEY9)
+								  
+								);
+	 
+    Permuted_Choice2 u10 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF10),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF10),
+								  .SUBKEY(KEY10)
+								  
+								 );
+	 
+    Permuted_Choice2 u11 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF11),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF11),
+								  .SUBKEY(KEY11)
+								  
+								 );
+	 
+    Permuted_Choice2 u12 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF12),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF12),
+								  .SUBKEY(KEY12)
+								  
+								 );
+	 
+    Permuted_Choice2 u13 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF13),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF13),
+								  .SUBKEY(KEY13)
+								  
+								 );
+	 
+    Permuted_Choice2 u14 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF14),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF14),
+								  .SUBKEY(KEY14)
+								  
+								  );
+	 
+    Permuted_Choice2 u15 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF15),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF15),
+								  .SUBKEY(KEY15)
+								  
+								  );
+	 
+    Permuted_Choice2 u16 (
+	                       .LEFT_CIRCULAR_SHIFT1(LEFT_HALF16),
+								  .RIGHT_CIRCULAR_SHIFT1(RIGHT_HALF16),
+								  .SUBKEY(KEY16)
+								  
+								 );
+	 	 	 
+endmodule 
+module Permutation(S_OUTPUT, PERMUTATION_OUTPUT);
+
+ input   [32 : 1] S_OUTPUT;
+ 
+ output  [32 : 1] PERMUTATION_OUTPUT;
+ 
+ wire    [32 : 1] S_OUTPUT;
+ 
+ reg     [32 : 1] PERMUTATION_OUTPUT;
+ 
+ always @ (S_OUTPUT)
+ 
+   begin
+	
+	  PERMUTATION_OUTPUT[1]  = S_OUTPUT[16];
+	  PERMUTATION_OUTPUT[2]  = S_OUTPUT[7];
+	  PERMUTATION_OUTPUT[3]  = S_OUTPUT[20];
+	  PERMUTATION_OUTPUT[4]  = S_OUTPUT[21];
+	  PERMUTATION_OUTPUT[5]  = S_OUTPUT[29];
+	  PERMUTATION_OUTPUT[6]  = S_OUTPUT[12];
+	  PERMUTATION_OUTPUT[7]  = S_OUTPUT[28];
+	  PERMUTATION_OUTPUT[8]  = S_OUTPUT[17];
+	  PERMUTATION_OUTPUT[9]  = S_OUTPUT[1];
+	  PERMUTATION_OUTPUT[10] = S_OUTPUT[15];
+	  PERMUTATION_OUTPUT[11] = S_OUTPUT[23];
+	  PERMUTATION_OUTPUT[12] = S_OUTPUT[26];
+	  PERMUTATION_OUTPUT[13] = S_OUTPUT[5];
+	  PERMUTATION_OUTPUT[14] = S_OUTPUT[18];
+	  PERMUTATION_OUTPUT[15] = S_OUTPUT[31];
+	  PERMUTATION_OUTPUT[16] = S_OUTPUT[10];
+	  PERMUTATION_OUTPUT[17] = S_OUTPUT[2];
+	  PERMUTATION_OUTPUT[18] = S_OUTPUT[8];
+	  PERMUTATION_OUTPUT[19] = S_OUTPUT[24];
+	  PERMUTATION_OUTPUT[20] = S_OUTPUT[14];
+	  PERMUTATION_OUTPUT[21] = S_OUTPUT[32];
+	  PERMUTATION_OUTPUT[22] = S_OUTPUT[27];
+	  PERMUTATION_OUTPUT[23] = S_OUTPUT[3];
+	  PERMUTATION_OUTPUT[24] = S_OUTPUT[9];
+	  PERMUTATION_OUTPUT[25] = S_OUTPUT[19];
+	  PERMUTATION_OUTPUT[26] = S_OUTPUT[13];
+	  PERMUTATION_OUTPUT[27] = S_OUTPUT[30];
+	  PERMUTATION_OUTPUT[28] = S_OUTPUT[6];
+	  PERMUTATION_OUTPUT[29] = S_OUTPUT[22];
+	  PERMUTATION_OUTPUT[30] = S_OUTPUT[11];
+	  PERMUTATION_OUTPUT[31] = S_OUTPUT[4];
+	  PERMUTATION_OUTPUT[32] = S_OUTPUT[25];
+	  
+   end
+	
+endmodule 
+module Permuted_Choice2(LEFT_CIRCULAR_SHIFT1, RIGHT_CIRCULAR_SHIFT1, SUBKEY);
+    
+	 //input   [28 : 1] LEFTHALF_CIRCULAR_SHIFT1; 
+	  
+	 input   [28 : 1] LEFT_CIRCULAR_SHIFT1;
+	 
+	 //input   [28 : 1] RIGHTHALF_CIRCULAR_SHIFT1; 
+	  
+	 input   [28 : 1] RIGHT_CIRCULAR_SHIFT1;
+    
+	 output  [48 : 1] SUBKEY;
+	 
+	 //wire    [28 : 1] LEFTHALF_CIRCULAR_SHIFT1; 
+	 wire    [28 : 1] LEFT_CIRCULAR_SHIFT1;
+	 
+	 //wire    [28 : 1] RIGHTHALF_CIRCULAR_SHIFT1; 
+	 wire    [28 : 1] RIGHT_CIRCULAR_SHIFT1;
+	 
+	 reg     [48 : 1] SUBKEY;
+	 
+	 //wire    [56 : 1] LEFT_CIRCULAR_SHIFT1; 
+	  
+	 //wire    [56 : 1] LEFT_CIRCULAR_SHIFT2; 
+	  
+	 wire      [56 : 1] PERMUTATION2_INPUT;
+	 
+	 assign
+	 
+	  PERMUTATION2_INPUT = {LEFT_CIRCULAR_SHIFT1 , RIGHT_CIRCULAR_SHIFT1};
+	  
+	 always @ (PERMUTATION2_INPUT)
+	 
+	  begin
+	 
+	  SUBKEY[1]  = PERMUTATION2_INPUT[14];
+	  SUBKEY[2]  = PERMUTATION2_INPUT[17];
+	  SUBKEY[3]  = PERMUTATION2_INPUT[11];
+	  SUBKEY[4]  = PERMUTATION2_INPUT[24];
+	  SUBKEY[5]  = PERMUTATION2_INPUT[1];
+	  SUBKEY[6]  = PERMUTATION2_INPUT[5];
+	  SUBKEY[7]  = PERMUTATION2_INPUT[3];
+	  SUBKEY[8]  = PERMUTATION2_INPUT[28];
+	  SUBKEY[9]  = PERMUTATION2_INPUT[15];
+	  SUBKEY[10] = PERMUTATION2_INPUT[6];
+	  SUBKEY[11] = PERMUTATION2_INPUT[21];
+	  SUBKEY[12] = PERMUTATION2_INPUT[10];
+	  SUBKEY[13] = PERMUTATION2_INPUT[23];
+	  SUBKEY[14] = PERMUTATION2_INPUT[19];
+	  SUBKEY[15] = PERMUTATION2_INPUT[12];
+	  SUBKEY[16] = PERMUTATION2_INPUT[4];
+	  SUBKEY[17] = PERMUTATION2_INPUT[26];
+	  SUBKEY[18] = PERMUTATION2_INPUT[8];
+	  SUBKEY[19] = PERMUTATION2_INPUT[16];
+	  SUBKEY[20] = PERMUTATION2_INPUT[7];
+	  SUBKEY[21] = PERMUTATION2_INPUT[27];
+	  SUBKEY[22] = PERMUTATION2_INPUT[20];
+	  SUBKEY[23] = PERMUTATION2_INPUT[13];
+	  SUBKEY[24] = PERMUTATION2_INPUT[2];
+	  SUBKEY[25] = PERMUTATION2_INPUT[41];
+	  SUBKEY[26] = PERMUTATION2_INPUT[52];
+	  SUBKEY[27] = PERMUTATION2_INPUT[31];
+	  SUBKEY[28] = PERMUTATION2_INPUT[37];
+	  SUBKEY[29] = PERMUTATION2_INPUT[47];
+	  SUBKEY[30] = PERMUTATION2_INPUT[55];
+	  SUBKEY[31] = PERMUTATION2_INPUT[30];
+	  SUBKEY[32] = PERMUTATION2_INPUT[40];
+	  SUBKEY[33] = PERMUTATION2_INPUT[51];
+	  SUBKEY[34] = PERMUTATION2_INPUT[45];
+	  SUBKEY[35] = PERMUTATION2_INPUT[33];
+	  SUBKEY[36] = PERMUTATION2_INPUT[48];
+	  SUBKEY[37] = PERMUTATION2_INPUT[44];
+	  SUBKEY[38] = PERMUTATION2_INPUT[49];
+	  SUBKEY[39] = PERMUTATION2_INPUT[39];
+	  SUBKEY[40] = PERMUTATION2_INPUT[56];
+	  SUBKEY[41] = PERMUTATION2_INPUT[34];
+	  SUBKEY[42] = PERMUTATION2_INPUT[53];
+	  SUBKEY[43] = PERMUTATION2_INPUT[46];
+	  SUBKEY[44] = PERMUTATION2_INPUT[42];
+	  SUBKEY[45] = PERMUTATION2_INPUT[50];
+	  SUBKEY[46] = PERMUTATION2_INPUT[36];
+	  SUBKEY[47] = PERMUTATION2_INPUT[29];
+	  SUBKEY[48] = PERMUTATION2_INPUT[32];
+
+    end 
+
+endmodule
+module Reg32(CLK, RST, RIGHT, RIGHT_REG, LEFT_REG1, RIGHT_REG1);
+
+ input   CLK;
+ 
+ input   RST; 
+  
+ input   [32 : 1]RIGHT; 
+  
+ input   [32 : 1]RIGHT_REG;
+ 
+ output  [32 : 1] LEFT_REG1;
+ 
+ output  [32 : 1] RIGHT_REG1;
+
+ wire    CLK;
+ 
+ wire    RST;
+   
+ reg     [32 : 1] LEFT_REG1;
+ 
+ reg     [32 : 1] RIGHT_REG1;
+ 
+ always @ (posedge CLK or posedge RST)
+ 
+   begin
+	
+	  if(RST)
+	  
+	    begin
+		 
+		   LEFT_REG1  = 32'h00000000;
+			
+			RIGHT_REG1 = 32'h00000000;
+			
+		 end
+			
+	  else
+	   
+		 begin
+		 
+		   LEFT_REG1  =  RIGHT;
+			
+			RIGHT_REG1 =  RIGHT_REG;
+			
+		 end
+		 
+  end
+ 
+endmodule 
+
+module Round1(CLK, RST, LEFT, RIGHT, KEY, LEFT1, RIGHT1);
+
+input  CLK;
+
+input  RST;
+
+input  [32 : 1] LEFT;
+
+input  [32 : 1] RIGHT;
+
+input  [48 : 1] KEY;
+
+output [32 : 1] LEFT1;
+
+output [32 : 1] RIGHT1;
+
+wire   [32 : 1] LEFT1;
+
+wire   [32 : 1] RIGHT1;
+
+wire   CLK;
+
+wire   RST;
+
+wire   [32 : 1] LEFT;
+
+wire   [32 : 1] RIGHT;
+
+wire   [48 : 1] KEY;
+
+wire   [48 : 1] EXPANSION_PERMUTATION;
+
+wire   [6 : 1]  S1_INPUT;
+
+wire   [6 : 1]  S2_INPUT;
+
+wire   [6 : 1]  S3_INPUT;
+
+wire   [6 : 1]  S4_INPUT;
+
+wire   [6 : 1]  S5_INPUT;
+
+wire   [6 : 1]  S6_INPUT;
+
+wire   [6 : 1]  S7_INPUT;
+
+wire   [6 : 1]  S8_INPUT;
+
+//wire   [48 : 1] SBOX_INPUT;
+
+wire   [3 : 0]  S1_OUTPUT;
+
+wire   [3 : 0]  S2_OUTPUT;
+
+wire   [3 : 0]  S3_OUTPUT;
+
+wire   [3 : 0]  S4_OUTPUT;
+
+wire   [3 : 0]  S5_OUTPUT;
+
+wire   [3 : 0]  S6_OUTPUT;
+
+wire   [3 : 0]  S7_OUTPUT;
+
+wire   [3 : 0]  S8_OUTPUT;
+
+wire   [32 : 1] S_OUTPUT;
+
+wire   [32 : 1] PERMUTATION_OUTPUT;
+
+wire   [32 : 1] RIGHT_REG;
+
+//wire   [6 : 1]  SBOX1_INPUT;
+
+//wire   [6 : 1]  SBOX2_INPUT;
+
+//wire   [6 : 1]  SBOX3_INPUT;
+
+//wire   [6 : 1]  SBOX4_INPUT;
+
+//wire   [6 : 1]  SBOX5_INPUT;
+
+//wire   [6 : 1]  SBOX6_INPUT;
+
+//wire   [6 : 1]  SBOX7_INPUT;
+
+//wire   [6 : 1]  SBOX8_INPUT;
+
+  Expansion_Permutation expansion (
+                                   .RIGHT(RIGHT),
+											  .EXPANSION_PERMUTATION(EXPANSION_PERMUTATION)
+									       );
+ 
+  Xor_Operation expansion_to_xor1  (
+                                   .EXPANSION_PERMUTATION(EXPANSION_PERMUTATION),
+											  .SUBKEY(KEY),
+											  .SBOX1_INPUT(S1_INPUT), 			 
+											  .SBOX2_INPUT(S2_INPUT),
+											  .SBOX3_INPUT(S3_INPUT),
+											  .SBOX4_INPUT(S4_INPUT),
+											  .SBOX5_INPUT(S5_INPUT),
+                                   .SBOX6_INPUT(S6_INPUT),
+                                   .SBOX7_INPUT(S7_INPUT),
+                                   .SBOX8_INPUT(S8_INPUT)											  
+                                  );
+  											 
+  Sbox_Rom1 s1                    (
+                                   .S1_INPUT(S1_INPUT),
+											  .S1_OUTPUT(S1_OUTPUT) 
+											 );
+
+  Sbox_Rom2 s2                    (
+                                   .S2_INPUT(S2_INPUT),
+											  .S2_OUTPUT (S2_OUTPUT)
+											 );
+  Sbox_Rom3 s3                    (
+                                   .S3_INPUT(S3_INPUT),
+											  .S3_OUTPUT (S3_OUTPUT)
+											 );
+  Sbox_Rom4 s4							(
+                                   .S4_INPUT(S4_INPUT),
+											  .S4_OUTPUT (S4_OUTPUT)
+											);
+  Sbox_Rom5 s5                   (
+                                   .S5_INPUT(S5_INPUT),
+											  .S5_OUTPUT (S5_OUTPUT)
+                                 );
+  Sbox_Rom6 s6                   (
+                                   .S6_INPUT(S6_INPUT),
+											  .S6_OUTPUT (S6_OUTPUT)
+											);
+  Sbox_Rom7 s7                   (
+                                   .S7_INPUT(S7_INPUT),
+											  .S7_OUTPUT (S7_OUTPUT)
+											);
+  Sbox_Rom8 s8                   (
+                                   .S8_INPUT(S8_INPUT),
+											  .S8_OUTPUT (S8_OUTPUT)
+											);
+  Sbox_Output sout               (
+                                   .S1_OUTPUT(S1_OUTPUT),
+											  .S2_OUTPUT(S2_OUTPUT),
+											  .S3_OUTPUT(S3_OUTPUT),
+											  .S4_OUTPUT(S4_OUTPUT),
+											  .S5_OUTPUT(S5_OUTPUT),
+											  .S6_OUTPUT(S6_OUTPUT),
+											  .S7_OUTPUT(S7_OUTPUT),
+											  .S8_OUTPUT(S8_OUTPUT),
+											  .S_OUTPUT (S_OUTPUT)
+											);
+  Permutation s_to_permutation   (
+                                   .S_OUTPUT(S_OUTPUT),
+								   .PERMUTATION_OUTPUT(PERMUTATION_OUTPUT)
+											 
+											);
+ 
+  Xor_Permutation permut_xor     (
+                                   .PERMUTATION_OUTPUT(PERMUTATION_OUTPUT),
+											  .LEFT(LEFT),
+											  .RIGHT_REG(RIGHT_REG)
+											);
+  											
+
+  Reg32 input_to_round2          (
+                                   .CLK(CLK),
+											  .RST(RST),
+											  .RIGHT(RIGHT),
+											  .RIGHT_REG(RIGHT_REG),
+											  .LEFT_REG1(LEFT1),
+											  .RIGHT_REG1(RIGHT1)
+											);										
+
+
+endmodule
+
+module Sbox_Output(S1_OUTPUT, S2_OUTPUT, S3_OUTPUT, S4_OUTPUT, S5_OUTPUT, S6_OUTPUT,
+                   S7_OUTPUT, S8_OUTPUT, S_OUTPUT);
+						 
+  input   [3 : 0] S1_OUTPUT;
+  input   [3 : 0] S2_OUTPUT;
+  input   [3 : 0] S3_OUTPUT;
+  input   [3 : 0] S4_OUTPUT;
+  input   [3 : 0] S5_OUTPUT;
+  input   [3 : 0] S6_OUTPUT;
+  input   [3 : 0] S7_OUTPUT;
+  input   [3 : 0] S8_OUTPUT;
+  output  [32 : 1]S_OUTPUT;
+  
+  wire [3 : 0] S1_OUTPUT;
+  wire [3 : 0] S2_OUTPUT;
+  wire [3 : 0] S3_OUTPUT;
+  wire [3 : 0] S4_OUTPUT;
+  wire [3 : 0] S5_OUTPUT;
+  wire [3 : 0] S6_OUTPUT;
+  wire [3 : 0] S7_OUTPUT;
+  wire [3 : 0] S8_OUTPUT;
+  
+  wire [32 : 1]S_OUTPUT;
+  
+  assign S_OUTPUT = {S1_OUTPUT,S2_OUTPUT,S3_OUTPUT,S4_OUTPUT,S5_OUTPUT,S6_OUTPUT,
+                     S7_OUTPUT,S8_OUTPUT};
+
+
+endmodule
+module Sbox_Rom1(S1_INPUT, S1_OUTPUT);
+    
+    input  [6 : 1] S1_INPUT;
+	 
+    output [3 : 0] S1_OUTPUT;
+	 
+	 wire   [6 : 1] S1_INPUT;
+	 
+	 reg    [3 : 0] S1_OUTPUT;
+	 
+	 wire   [6 : 1] S1_SELECT;
+	 
+	 assign S1_SELECT = {S1_INPUT[6], S1_INPUT[1], S1_INPUT[5 : 2]};
+	 
+	 always @(S1_SELECT)
+	 
+	  begin 
+	  
+	    case (S1_SELECT)
+            6'b000000: S1_OUTPUT = 4'hE;
+            6'b000001: S1_OUTPUT = 4'h4;
+            6'b000010: S1_OUTPUT = 4'hD;
+            6'b000011: S1_OUTPUT = 4'h1;
+            6'b000100: S1_OUTPUT = 4'h2;
+            6'b000101: S1_OUTPUT = 4'hF;
+            6'b000110: S1_OUTPUT = 4'hB;
+            6'b000111: S1_OUTPUT = 4'h8;
+            6'b001000: S1_OUTPUT = 4'h3;
+            6'b001001: S1_OUTPUT = 4'hA;
+            6'b001010: S1_OUTPUT = 4'h6;
+            6'b001011: S1_OUTPUT = 4'hC;
+            6'b001100: S1_OUTPUT = 4'h5;
+            6'b001101: S1_OUTPUT = 4'h9;
+            6'b001110: S1_OUTPUT = 4'h0;
+            6'b001111: S1_OUTPUT = 4'h7;
+            6'b010000: S1_OUTPUT = 4'h0;
+            6'b010001: S1_OUTPUT = 4'hF;
+            6'b010010: S1_OUTPUT = 4'h7;
+            6'b010011: S1_OUTPUT = 4'h4;
+            6'b010100: S1_OUTPUT = 4'hE;
+            6'b010101: S1_OUTPUT = 4'h2;
+            6'b010110: S1_OUTPUT = 4'hD;
+            6'b010111: S1_OUTPUT = 4'h1;
+            6'b011000: S1_OUTPUT = 4'hA;
+            6'b011001: S1_OUTPUT = 4'h6;
+            6'b011010: S1_OUTPUT = 4'hC;
+            6'b011011: S1_OUTPUT = 4'hB;
+            6'b011100: S1_OUTPUT = 4'h9;
+            6'b011101: S1_OUTPUT = 4'h5;
+            6'b011110: S1_OUTPUT = 4'h3;
+            6'b011111: S1_OUTPUT = 4'h8;
+            6'b100000: S1_OUTPUT = 4'h4;
+            6'b100001: S1_OUTPUT = 4'h1;
+            6'b100010: S1_OUTPUT = 4'hE;
+            6'b100011: S1_OUTPUT = 4'h8;
+            6'b100100: S1_OUTPUT = 4'hD;
+            6'b100101: S1_OUTPUT = 4'h6;
+            6'b100110: S1_OUTPUT = 4'h2;
+            6'b100111: S1_OUTPUT = 4'hB;
+            6'b101000: S1_OUTPUT = 4'hF;
+            6'b101001: S1_OUTPUT = 4'hC;
+            6'b101010: S1_OUTPUT = 4'h9;
+            6'b101011: S1_OUTPUT = 4'h7;
+            6'b101100: S1_OUTPUT = 4'h3;
+            6'b101101: S1_OUTPUT = 4'hA;
+            6'b101110: S1_OUTPUT = 4'h5;
+            6'b101111: S1_OUTPUT = 4'h0;
+            6'b110000: S1_OUTPUT = 4'hF;
+            6'b110001: S1_OUTPUT = 4'hC;
+            6'b110010: S1_OUTPUT = 4'h8;
+            6'b110011: S1_OUTPUT = 4'h2;
+            6'b110100: S1_OUTPUT = 4'h4;
+            6'b110101: S1_OUTPUT = 4'h9;
+            6'b110110: S1_OUTPUT = 4'h1;
+            6'b110111: S1_OUTPUT = 4'h7;
+            6'b111000: S1_OUTPUT = 4'h5;
+            6'b111001: S1_OUTPUT = 4'hB;
+            6'b111010: S1_OUTPUT = 4'h3;
+            6'b111011: S1_OUTPUT = 4'hE;
+            6'b111100: S1_OUTPUT = 4'hA;
+            6'b111101: S1_OUTPUT = 4'h0;
+            6'b111110: S1_OUTPUT = 4'h6;
+            6'b111111: S1_OUTPUT = 4'hD;
+            default:   S1_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 
+
+
+
+module Sbox_Rom2(S2_INPUT, S2_OUTPUT);
+     
+	 input  [6 : 1] S2_INPUT;
+     
+	 output [3 : 0] S2_OUTPUT; 
+	 
+    wire   [6 : 1] S2_INPUT; 
+	  
+	 reg    [3 : 0] S2_OUTPUT; 
+	  
+	 wire   [6 : 1] S2_SELECT; 
+	  
+	 assign S2_SELECT = {S2_INPUT[6],S2_INPUT[1],S2_INPUT[5 : 2]}; 
+	  
+	 always @(S2_SELECT) 
+	  
+	  begin 
+	   
+	    case(S2_SELECT) 
+	   
+            6'b000000: S2_OUTPUT = 4'hF;
+            6'b000001: S2_OUTPUT = 4'h1;
+            6'b000010: S2_OUTPUT = 4'h8;
+            6'b000011: S2_OUTPUT = 4'hE;
+            6'b000100: S2_OUTPUT = 4'h6;
+            6'b000101: S2_OUTPUT = 4'hB;
+            6'b000110: S2_OUTPUT = 4'h3;
+            6'b000111: S2_OUTPUT = 4'h4;
+            6'b001000: S2_OUTPUT = 4'h9;
+            6'b001001: S2_OUTPUT = 4'h7;
+            6'b001010: S2_OUTPUT = 4'h2;
+            6'b001011: S2_OUTPUT = 4'hD;
+            6'b001100: S2_OUTPUT = 4'hC;
+            6'b001101: S2_OUTPUT = 4'h0;
+            6'b001110: S2_OUTPUT = 4'h5;
+            6'b001111: S2_OUTPUT = 4'hA;
+            6'b010000: S2_OUTPUT = 4'h3;
+            6'b010001: S2_OUTPUT = 4'hD;
+            6'b010010: S2_OUTPUT = 4'h4;
+            6'b010011: S2_OUTPUT = 4'h7;
+            6'b010100: S2_OUTPUT = 4'hF;
+            6'b010101: S2_OUTPUT = 4'h2;
+            6'b010110: S2_OUTPUT = 4'h8;
+            6'b010111: S2_OUTPUT = 4'hE;
+            6'b011000: S2_OUTPUT = 4'hC;
+            6'b011001: S2_OUTPUT = 4'h0;
+            6'b011010: S2_OUTPUT = 4'h1;
+            6'b011011: S2_OUTPUT = 4'hA;
+            6'b011100: S2_OUTPUT = 4'h6;
+            6'b011101: S2_OUTPUT = 4'h9;
+            6'b011110: S2_OUTPUT = 4'hB;
+            6'b011111: S2_OUTPUT = 4'h5;
+            6'b100000: S2_OUTPUT = 4'h0;
+            6'b100001: S2_OUTPUT = 4'hE;
+            6'b100010: S2_OUTPUT = 4'h7;
+            6'b100011: S2_OUTPUT = 4'hB;
+            6'b100100: S2_OUTPUT = 4'hA;
+            6'b100101: S2_OUTPUT = 4'h4;
+            6'b100110: S2_OUTPUT = 4'hD;
+            6'b100111: S2_OUTPUT = 4'h1;
+            6'b101000: S2_OUTPUT = 4'h5;
+            6'b101001: S2_OUTPUT = 4'h8;
+            6'b101010: S2_OUTPUT = 4'hC;
+            6'b101011: S2_OUTPUT = 4'h6;
+            6'b101100: S2_OUTPUT = 4'h9;
+            6'b101101: S2_OUTPUT = 4'h3;
+            6'b101110: S2_OUTPUT = 4'h2;
+            6'b101111: S2_OUTPUT = 4'hF;
+            6'b110000: S2_OUTPUT = 4'hD;
+            6'b110001: S2_OUTPUT = 4'h8;
+            6'b110010: S2_OUTPUT = 4'hA;
+            6'b110011: S2_OUTPUT = 4'h1;
+            6'b110100: S2_OUTPUT = 4'h3;
+            6'b110101: S2_OUTPUT = 4'hF;
+            6'b110110: S2_OUTPUT = 4'h4;
+            6'b110111: S2_OUTPUT = 4'h2;
+            6'b111000: S2_OUTPUT = 4'hB;
+            6'b111001: S2_OUTPUT = 4'h6;
+            6'b111010: S2_OUTPUT = 4'h7;
+            6'b111011: S2_OUTPUT = 4'hC;
+            6'b111100: S2_OUTPUT = 4'h0;
+            6'b111101: S2_OUTPUT = 4'h5;
+            6'b111110: S2_OUTPUT = 4'hE;
+            6'b111111: S2_OUTPUT = 4'h9;
+            default:   S2_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 	
+
+module Sbox_Rom3(S3_INPUT , S3_OUTPUT);
+     
+	 input  [6 : 1] S3_INPUT ;
+     
+	 output [3 : 0] S3_OUTPUT; 
+	  
+	 wire   [6 : 1] S3_INPUT;
+	 
+	 reg    [3 : 0] S3_OUTPUT;
+	 
+	 wire   [6 : 1] S3_SELECT;
+	 
+	 assign S3_SELECT = {S3_INPUT[6],S3_INPUT[1],S3_INPUT[5 : 2]};
+	 
+	 always @(S3_SELECT)
+	 
+	  begin
+	  
+	    case(S3_SELECT)
+	  
+            6'b000000: S3_OUTPUT = 4'hA;
+            6'b000001: S3_OUTPUT = 4'h0;
+            6'b000010: S3_OUTPUT = 4'h9;
+            6'b000011: S3_OUTPUT = 4'hE;
+            6'b000100: S3_OUTPUT = 4'h6;
+            6'b000101: S3_OUTPUT = 4'h3;
+            6'b000110: S3_OUTPUT = 4'hF;
+            6'b000111: S3_OUTPUT = 4'h5;
+            6'b001000: S3_OUTPUT = 4'h1;
+            6'b001001: S3_OUTPUT = 4'hD;
+            6'b001010: S3_OUTPUT = 4'hC;
+            6'b001011: S3_OUTPUT = 4'h7;
+            6'b001100: S3_OUTPUT = 4'hB;
+            6'b001101: S3_OUTPUT = 4'h4;
+            6'b001110: S3_OUTPUT = 4'h2;
+            6'b001111: S3_OUTPUT = 4'h8;
+            6'b010000: S3_OUTPUT = 4'hD;
+            6'b010001: S3_OUTPUT = 4'h7;
+            6'b010010: S3_OUTPUT = 4'h0;
+            6'b010011: S3_OUTPUT = 4'h9;
+            6'b010100: S3_OUTPUT = 4'h3;
+            6'b010101: S3_OUTPUT = 4'h4;
+            6'b010110: S3_OUTPUT = 4'h6;
+            6'b010111: S3_OUTPUT = 4'hA;
+            6'b011000: S3_OUTPUT = 4'h2;
+            6'b011001: S3_OUTPUT = 4'h8;
+            6'b011010: S3_OUTPUT = 4'h5;
+            6'b011011: S3_OUTPUT = 4'hE;
+            6'b011100: S3_OUTPUT = 4'hC;
+            6'b011101: S3_OUTPUT = 4'hB;
+            6'b011110: S3_OUTPUT = 4'hF;
+            6'b011111: S3_OUTPUT = 4'h1;
+            6'b100000: S3_OUTPUT = 4'hD;
+            6'b100001: S3_OUTPUT = 4'h6;
+            6'b100010: S3_OUTPUT = 4'h4;
+            6'b100011: S3_OUTPUT = 4'h9;
+            6'b100100: S3_OUTPUT = 4'h8;
+            6'b100101: S3_OUTPUT = 4'hF;
+            6'b100110: S3_OUTPUT = 4'h3;
+            6'b100111: S3_OUTPUT = 4'h0;
+            6'b101000: S3_OUTPUT = 4'hB;
+            6'b101001: S3_OUTPUT = 4'h1;
+            6'b101010: S3_OUTPUT = 4'h2;
+            6'b101011: S3_OUTPUT = 4'hC;
+            6'b101100: S3_OUTPUT = 4'h5;
+            6'b101101: S3_OUTPUT = 4'hA;
+            6'b101110: S3_OUTPUT = 4'hE;
+            6'b101111: S3_OUTPUT = 4'h7;
+            6'b110000: S3_OUTPUT = 4'h1;
+            6'b110001: S3_OUTPUT = 4'hA;
+            6'b110010: S3_OUTPUT = 4'hD;
+            6'b110011: S3_OUTPUT = 4'h0;
+            6'b110100: S3_OUTPUT = 4'h6;
+            6'b110101: S3_OUTPUT = 4'h9;
+            6'b110110: S3_OUTPUT = 4'h8;
+            6'b110111: S3_OUTPUT = 4'h7;
+            6'b111000: S3_OUTPUT = 4'h4;
+            6'b111001: S3_OUTPUT = 4'hF;
+            6'b111010: S3_OUTPUT = 4'hE;
+            6'b111011: S3_OUTPUT = 4'h3;
+            6'b111100: S3_OUTPUT = 4'hB;
+            6'b111101: S3_OUTPUT = 4'h5;
+            6'b111110: S3_OUTPUT = 4'h2;
+            6'b111111: S3_OUTPUT = 4'hC;
+            default:   S3_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 	   
+
+module Sbox_Rom4(S4_INPUT, S4_OUTPUT);
+    
+	 input   [6 : 1]S4_INPUT;
+    
+	 output  [3  : 0 ]S4_OUTPUT;
+
+    wire    [6 : 1] S4_INPUT;
+	 
+	 reg     [3 : 0] S4_OUTPUT;
+	 
+	 wire    [6 : 1] S4_SELECT;
+	 
+	 assign S4_SELECT = {S4_INPUT[6],S4_INPUT[1],S4_INPUT[5 : 2]};
+	 
+	 always @(S4_SELECT)
+	 
+	  begin
+	  
+	    case(S4_SELECT)
+	  
+            6'b000000: S4_OUTPUT = 4'h7;
+            6'b000001: S4_OUTPUT = 4'hD;
+            6'b000010: S4_OUTPUT = 4'hE;
+            6'b000011: S4_OUTPUT = 4'h3;
+            6'b000100: S4_OUTPUT = 4'h0;
+            6'b000101: S4_OUTPUT = 4'h6;
+            6'b000110: S4_OUTPUT = 4'h9;
+            6'b000111: S4_OUTPUT = 4'hA;
+            6'b001000: S4_OUTPUT = 4'h1;
+            6'b001001: S4_OUTPUT = 4'h2;
+            6'b001010: S4_OUTPUT = 4'h8;
+            6'b001011: S4_OUTPUT = 4'h5;
+            6'b001100: S4_OUTPUT = 4'hB;
+            6'b001101: S4_OUTPUT = 4'hC;
+            6'b001110: S4_OUTPUT = 4'h4;
+            6'b001111: S4_OUTPUT = 4'hF;
+            6'b010000: S4_OUTPUT = 4'hD;
+            6'b010001: S4_OUTPUT = 4'h8;
+            6'b010010: S4_OUTPUT = 4'hB;
+            6'b010011: S4_OUTPUT = 4'h5;
+            6'b010100: S4_OUTPUT = 4'h6;
+            6'b010101: S4_OUTPUT = 4'hF;
+            6'b010110: S4_OUTPUT = 4'h0;
+            6'b010111: S4_OUTPUT = 4'h3;
+            6'b011000: S4_OUTPUT = 4'h4;
+            6'b011001: S4_OUTPUT = 4'h7;
+            6'b011010: S4_OUTPUT = 4'h2;
+            6'b011011: S4_OUTPUT = 4'hC;
+            6'b011100: S4_OUTPUT = 4'h1;
+            6'b011101: S4_OUTPUT = 4'hA;
+            6'b011110: S4_OUTPUT = 4'hE;
+            6'b011111: S4_OUTPUT = 4'h9;
+            6'b100000: S4_OUTPUT = 4'hA;
+            6'b100001: S4_OUTPUT = 4'h6;
+            6'b100010: S4_OUTPUT = 4'h9;
+            6'b100011: S4_OUTPUT = 4'h0;
+            6'b100100: S4_OUTPUT = 4'hC;
+            6'b100101: S4_OUTPUT = 4'hB;
+            6'b100110: S4_OUTPUT = 4'h7;
+            6'b100111: S4_OUTPUT = 4'hD;
+            6'b101000: S4_OUTPUT = 4'hF;
+            6'b101001: S4_OUTPUT = 4'h1;
+            6'b101010: S4_OUTPUT = 4'h3;
+            6'b101011: S4_OUTPUT = 4'hE;
+            6'b101100: S4_OUTPUT = 4'h5;
+            6'b101101: S4_OUTPUT = 4'h2;
+            6'b101110: S4_OUTPUT = 4'h8;
+            6'b101111: S4_OUTPUT = 4'h4;
+            6'b110000: S4_OUTPUT = 4'h3;
+            6'b110001: S4_OUTPUT = 4'hF;
+            6'b110010: S4_OUTPUT = 4'h0;
+            6'b110011: S4_OUTPUT = 4'h6;
+            6'b110100: S4_OUTPUT = 4'hA;
+            6'b110101: S4_OUTPUT = 4'h1;
+            6'b110110: S4_OUTPUT = 4'hD;
+            6'b110111: S4_OUTPUT = 4'h8;
+            6'b111000: S4_OUTPUT = 4'h9;
+            6'b111001: S4_OUTPUT = 4'h4;
+            6'b111010: S4_OUTPUT = 4'h5;
+            6'b111011: S4_OUTPUT = 4'hB;
+            6'b111100: S4_OUTPUT = 4'hC;
+            6'b111101: S4_OUTPUT = 4'h7;
+            6'b111110: S4_OUTPUT = 4'h2;
+            6'b111111: S4_OUTPUT = 4'hE;
+            default:   S4_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 	   
+
+module Sbox_Rom5(S5_INPUT, S5_OUTPUT);
+    
+	 input  [6 : 1] S5_INPUT;
+    
+	 output [3  : 0 ] S5_OUTPUT;
+	 
+	 wire   [6 : 1] S5_INPUT;
+	 
+	 reg    [3 : 0] S5_OUTPUT;
+	 
+	 wire   [6 : 1] S5_SELECT;
+	 
+	 assign S5_SELECT = {S5_INPUT[6],S5_INPUT[1],S5_INPUT[5 : 2]};
+	 
+	 always @(S5_SELECT)
+	 
+	  begin
+	  
+	    case(S5_SELECT)
+	  
+            6'b000000: S5_OUTPUT = 4'h2;
+            6'b000001: S5_OUTPUT = 4'hC;
+            6'b000010: S5_OUTPUT = 4'h4;
+            6'b000011: S5_OUTPUT = 4'h1;
+            6'b000100: S5_OUTPUT = 4'h7;
+            6'b000101: S5_OUTPUT = 4'hA;
+            6'b000110: S5_OUTPUT = 4'hB;
+            6'b000111: S5_OUTPUT = 4'h6;
+            6'b001000: S5_OUTPUT = 4'h8;
+            6'b001001: S5_OUTPUT = 4'h5;
+            6'b001010: S5_OUTPUT = 4'h3;
+            6'b001011: S5_OUTPUT = 4'hF;
+            6'b001100: S5_OUTPUT = 4'hD;
+            6'b001101: S5_OUTPUT = 4'h0;
+            6'b001110: S5_OUTPUT = 4'hE;
+            6'b001111: S5_OUTPUT = 4'h9;
+            6'b010000: S5_OUTPUT = 4'hE;
+            6'b010001: S5_OUTPUT = 4'hB;
+            6'b010010: S5_OUTPUT = 4'h2;
+            6'b010011: S5_OUTPUT = 4'hC;
+            6'b010100: S5_OUTPUT = 4'h4;
+            6'b010101: S5_OUTPUT = 4'h7;
+            6'b010110: S5_OUTPUT = 4'hD;
+            6'b010111: S5_OUTPUT = 4'h1;
+            6'b011000: S5_OUTPUT = 4'h5;
+            6'b011001: S5_OUTPUT = 4'h0;
+            6'b011010: S5_OUTPUT = 4'hF;
+            6'b011011: S5_OUTPUT = 4'hA;
+            6'b011100: S5_OUTPUT = 4'h3;
+            6'b011101: S5_OUTPUT = 4'h9;
+            6'b011110: S5_OUTPUT = 4'h8;
+            6'b011111: S5_OUTPUT = 4'h6;
+            6'b100000: S5_OUTPUT = 4'h4;
+            6'b100001: S5_OUTPUT = 4'h2;
+            6'b100010: S5_OUTPUT = 4'h1;
+            6'b100011: S5_OUTPUT = 4'hB;
+            6'b100100: S5_OUTPUT = 4'hA;
+            6'b100101: S5_OUTPUT = 4'hD;
+            6'b100110: S5_OUTPUT = 4'h7;
+            6'b100111: S5_OUTPUT = 4'h8;
+            6'b101000: S5_OUTPUT = 4'hF;
+            6'b101001: S5_OUTPUT = 4'h9;
+            6'b101010: S5_OUTPUT = 4'hC;
+            6'b101011: S5_OUTPUT = 4'h5;
+            6'b101100: S5_OUTPUT = 4'h6;
+            6'b101101: S5_OUTPUT = 4'h3;
+            6'b101110: S5_OUTPUT = 4'h0;
+            6'b101111: S5_OUTPUT = 4'hE;
+            6'b110000: S5_OUTPUT = 4'hB;
+            6'b110001: S5_OUTPUT = 4'h8;
+            6'b110010: S5_OUTPUT = 4'hC;
+            6'b110011: S5_OUTPUT = 4'h7;
+            6'b110100: S5_OUTPUT = 4'h1;
+            6'b110101: S5_OUTPUT = 4'hE;
+            6'b110110: S5_OUTPUT = 4'h2;
+            6'b110111: S5_OUTPUT = 4'hD;
+            6'b111000: S5_OUTPUT = 4'h6;
+            6'b111001: S5_OUTPUT = 4'hF;
+            6'b111010: S5_OUTPUT = 4'h0;
+            6'b111011: S5_OUTPUT = 4'h9;
+            6'b111100: S5_OUTPUT = 4'hA;
+            6'b111101: S5_OUTPUT = 4'h4;
+            6'b111110: S5_OUTPUT = 4'h5;
+            6'b111111: S5_OUTPUT = 4'h3;
+            default:   S5_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 	   
+
+
+module Sbox_Rom6(S6_INPUT, S6_OUTPUT);
+    
+	 input  [6 : 1] S6_INPUT;
+    
+	 output [3  : 0 ] S6_OUTPUT;
+   
+    wire   [6 : 1] S6_INPUT;
+	 
+	 reg    [3 : 0] S6_OUTPUT;
+	 
+	 wire   [6 : 1] S6_SELECT;
+	 
+	 assign S6_SELECT = {S6_INPUT[6],S6_INPUT[1],S6_INPUT[5 : 2]}; 
+	 
+	 always @(S6_SELECT)
+	 
+	  begin
+	  
+	    case(S6_SELECT)
+	  
+            6'b000000: S6_OUTPUT = 4'hC;
+            6'b000001: S6_OUTPUT = 4'h1;
+            6'b000010: S6_OUTPUT = 4'hA;
+            6'b000011: S6_OUTPUT = 4'hF;
+            6'b000100: S6_OUTPUT = 4'h9;
+            6'b000101: S6_OUTPUT = 4'h2;
+            6'b000110: S6_OUTPUT = 4'h6;
+            6'b000111: S6_OUTPUT = 4'h8;
+            6'b001000: S6_OUTPUT = 4'h0;
+            6'b001001: S6_OUTPUT = 4'hD;
+            6'b001010: S6_OUTPUT = 4'h3;
+            6'b001011: S6_OUTPUT = 4'h4;
+            6'b001100: S6_OUTPUT = 4'hE;
+            6'b001101: S6_OUTPUT = 4'h7;
+            6'b001110: S6_OUTPUT = 4'h5;
+            6'b001111: S6_OUTPUT = 4'hB;
+            6'b010000: S6_OUTPUT = 4'hA;
+            6'b010001: S6_OUTPUT = 4'hF;
+            6'b010010: S6_OUTPUT = 4'h4;
+            6'b010011: S6_OUTPUT = 4'h2;
+            6'b010100: S6_OUTPUT = 4'h7;
+            6'b010101: S6_OUTPUT = 4'hC;
+            6'b010110: S6_OUTPUT = 4'h9;
+            6'b010111: S6_OUTPUT = 4'h5;
+            6'b011000: S6_OUTPUT = 4'h6;
+            6'b011001: S6_OUTPUT = 4'h1;
+            6'b011010: S6_OUTPUT = 4'hD;
+            6'b011011: S6_OUTPUT = 4'hE;
+            6'b011100: S6_OUTPUT = 4'h0;
+            6'b011101: S6_OUTPUT = 4'hB;
+            6'b011110: S6_OUTPUT = 4'h3;
+            6'b011111: S6_OUTPUT = 4'h8;
+            6'b100000: S6_OUTPUT = 4'h9;
+            6'b100001: S6_OUTPUT = 4'hE;
+            6'b100010: S6_OUTPUT = 4'hF;
+            6'b100011: S6_OUTPUT = 4'h5;
+            6'b100100: S6_OUTPUT = 4'h2;
+            6'b100101: S6_OUTPUT = 4'h8;
+            6'b100110: S6_OUTPUT = 4'hC;
+            6'b100111: S6_OUTPUT = 4'h3;
+            6'b101000: S6_OUTPUT = 4'h7;
+            6'b101001: S6_OUTPUT = 4'h0;
+            6'b101010: S6_OUTPUT = 4'h4;
+            6'b101011: S6_OUTPUT = 4'hA;
+            6'b101100: S6_OUTPUT = 4'h1;
+            6'b101101: S6_OUTPUT = 4'hD;
+            6'b101110: S6_OUTPUT = 4'hB;
+            6'b101111: S6_OUTPUT = 4'h6;
+            6'b110000: S6_OUTPUT = 4'h4;
+            6'b110001: S6_OUTPUT = 4'h3;
+            6'b110010: S6_OUTPUT = 4'h2;
+            6'b110011: S6_OUTPUT = 4'hC;
+            6'b110100: S6_OUTPUT = 4'h9;
+            6'b110101: S6_OUTPUT = 4'h5;
+            6'b110110: S6_OUTPUT = 4'hF;
+            6'b110111: S6_OUTPUT = 4'hA;
+            6'b111000: S6_OUTPUT = 4'hB;
+            6'b111001: S6_OUTPUT = 4'hE;
+            6'b111010: S6_OUTPUT = 4'h1;
+            6'b111011: S6_OUTPUT = 4'h7;
+            6'b111100: S6_OUTPUT = 4'h6;
+            6'b111101: S6_OUTPUT = 4'h0;
+            6'b111110: S6_OUTPUT = 4'h8;
+            6'b111111: S6_OUTPUT = 4'hD;
+            default:   S6_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 	
+
+module Sbox_Rom7(S7_INPUT, S7_OUTPUT);
+
+ 
+	 input  [6 : 1] S7_INPUT;
+    
+	 output [3  : 0 ] S7_OUTPUT;
+   
+    wire   [6 : 1] S7_INPUT;
+	 
+	 reg    [3 : 0] S7_OUTPUT;
+	 
+	 wire   [6 : 1] S7_SELECT;
+	 
+	 assign S7_SELECT = {S7_INPUT[6],S7_INPUT[1],S7_INPUT[5 : 2]};
+	 
+	 always @(S7_SELECT)
+	 
+	  begin
+	  
+	    case(S7_SELECT)
+	  
+            6'b000000: S7_OUTPUT = 4'h4;
+            6'b000001: S7_OUTPUT = 4'hB;
+            6'b000010: S7_OUTPUT = 4'h2;
+            6'b000011: S7_OUTPUT = 4'hE;
+            6'b000100: S7_OUTPUT = 4'hF;
+            6'b000101: S7_OUTPUT = 4'h0;
+            6'b000110: S7_OUTPUT = 4'h8;
+            6'b000111: S7_OUTPUT = 4'hD;
+            6'b001000: S7_OUTPUT = 4'h3;
+            6'b001001: S7_OUTPUT = 4'hC;
+            6'b001010: S7_OUTPUT = 4'h9;
+            6'b001011: S7_OUTPUT = 4'h7;
+            6'b001100: S7_OUTPUT = 4'h5;
+            6'b001101: S7_OUTPUT = 4'hA;
+            6'b001110: S7_OUTPUT = 4'h6;
+            6'b001111: S7_OUTPUT = 4'h1;
+            6'b010000: S7_OUTPUT = 4'hD;
+            6'b010001: S7_OUTPUT = 4'h0;
+            6'b010010: S7_OUTPUT = 4'hB;
+            6'b010011: S7_OUTPUT = 4'h7;
+            6'b010100: S7_OUTPUT = 4'h4;
+            6'b010101: S7_OUTPUT = 4'h9;
+            6'b010110: S7_OUTPUT = 4'h1;
+            6'b010111: S7_OUTPUT = 4'hA;
+            6'b011000: S7_OUTPUT = 4'hE;
+            6'b011001: S7_OUTPUT = 4'h3;
+            6'b011010: S7_OUTPUT = 4'h5;
+            6'b011011: S7_OUTPUT = 4'hC;
+            6'b011100: S7_OUTPUT = 4'h2;
+            6'b011101: S7_OUTPUT = 4'hF;
+            6'b011110: S7_OUTPUT = 4'h8;
+            6'b011111: S7_OUTPUT = 4'h6;
+            6'b100000: S7_OUTPUT = 4'h1;
+            6'b100001: S7_OUTPUT = 4'h4;
+            6'b100010: S7_OUTPUT = 4'hB;
+            6'b100011: S7_OUTPUT = 4'hD;
+            6'b100100: S7_OUTPUT = 4'hC;
+            6'b100101: S7_OUTPUT = 4'h3;
+            6'b100110: S7_OUTPUT = 4'h7;
+            6'b100111: S7_OUTPUT = 4'hE;
+            6'b101000: S7_OUTPUT = 4'hA;
+            6'b101001: S7_OUTPUT = 4'hF;
+            6'b101010: S7_OUTPUT = 4'h6;
+            6'b101011: S7_OUTPUT = 4'h8;
+            6'b101100: S7_OUTPUT = 4'h0;
+            6'b101101: S7_OUTPUT = 4'h5;
+            6'b101110: S7_OUTPUT = 4'h9;
+            6'b101111: S7_OUTPUT = 4'h2;
+            6'b110000: S7_OUTPUT = 4'h6;
+            6'b110001: S7_OUTPUT = 4'hB;
+            6'b110010: S7_OUTPUT = 4'hD;
+            6'b110011: S7_OUTPUT = 4'h8;
+            6'b110100: S7_OUTPUT = 4'h1;
+            6'b110101: S7_OUTPUT = 4'h4;
+            6'b110110: S7_OUTPUT = 4'hA;
+            6'b110111: S7_OUTPUT = 4'h7;
+            6'b111000: S7_OUTPUT = 4'h9;
+            6'b111001: S7_OUTPUT = 4'h5;
+            6'b111010: S7_OUTPUT = 4'h0;
+            6'b111011: S7_OUTPUT = 4'hF;
+            6'b111100: S7_OUTPUT = 4'hE;
+            6'b111101: S7_OUTPUT = 4'h2;
+            6'b111110: S7_OUTPUT = 4'h3;
+            6'b111111: S7_OUTPUT = 4'hC;
+            default:   S7_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 	 
+
+module Sbox_Rom8(S8_INPUT, S8_OUTPUT);
+
+    input  [6 : 1] S8_INPUT;
+    
+	 output [3  : 0 ] S8_OUTPUT;
+   
+    wire   [6 : 1] S8_INPUT;
+	 
+	 reg    [3 : 0] S8_OUTPUT;
+	 
+	 wire   [6 : 1] S8_SELECT;
+	 
+	 assign S8_SELECT = {S8_INPUT[6],S8_INPUT[1],S8_INPUT[5 : 2]};
+	 
+	 always @(S8_SELECT)
+	 
+	  begin
+	  
+	    case(S8_SELECT)
+	  
+            6'b000000: S8_OUTPUT = 4'hD;
+            6'b000001: S8_OUTPUT = 4'h2;
+            6'b000010: S8_OUTPUT = 4'h8;
+            6'b000011: S8_OUTPUT = 4'h4;
+            6'b000100: S8_OUTPUT = 4'h6;
+            6'b000101: S8_OUTPUT = 4'hF;
+            6'b000110: S8_OUTPUT = 4'hB;
+            6'b000111: S8_OUTPUT = 4'h1;
+            6'b001000: S8_OUTPUT = 4'hA;
+            6'b001001: S8_OUTPUT = 4'h9;
+            6'b001010: S8_OUTPUT = 4'h3;
+            6'b001011: S8_OUTPUT = 4'hE;
+            6'b001100: S8_OUTPUT = 4'h5;
+            6'b001101: S8_OUTPUT = 4'h0;
+            6'b001110: S8_OUTPUT = 4'hC;
+            6'b001111: S8_OUTPUT = 4'h7;
+            6'b010000: S8_OUTPUT = 4'h1;
+            6'b010001: S8_OUTPUT = 4'hF;
+            6'b010010: S8_OUTPUT = 4'hD;
+            6'b010011: S8_OUTPUT = 4'h8;
+            6'b010100: S8_OUTPUT = 4'hA;
+            6'b010101: S8_OUTPUT = 4'h3;
+            6'b010110: S8_OUTPUT = 4'h7;
+            6'b010111: S8_OUTPUT = 4'h4;
+            6'b011000: S8_OUTPUT = 4'hC;
+            6'b011001: S8_OUTPUT = 4'h5;
+            6'b011010: S8_OUTPUT = 4'h6;
+            6'b011011: S8_OUTPUT = 4'hB;
+            6'b011100: S8_OUTPUT = 4'h0;
+            6'b011101: S8_OUTPUT = 4'hE;
+            6'b011110: S8_OUTPUT = 4'h9;
+            6'b011111: S8_OUTPUT = 4'h2;
+            6'b100000: S8_OUTPUT = 4'h7;
+            6'b100001: S8_OUTPUT = 4'hB;
+            6'b100010: S8_OUTPUT = 4'h4;
+            6'b100011: S8_OUTPUT = 4'h1;
+            6'b100100: S8_OUTPUT = 4'h9;
+            6'b100101: S8_OUTPUT = 4'hC;
+            6'b100110: S8_OUTPUT = 4'hE;
+            6'b100111: S8_OUTPUT = 4'h2;
+            6'b101000: S8_OUTPUT = 4'h0;
+            6'b101001: S8_OUTPUT = 4'h6;
+            6'b101010: S8_OUTPUT = 4'hA;
+            6'b101011: S8_OUTPUT = 4'hD;
+            6'b101100: S8_OUTPUT = 4'hF;
+            6'b101101: S8_OUTPUT = 4'h3;
+            6'b101110: S8_OUTPUT = 4'h5;
+            6'b101111: S8_OUTPUT = 4'h8;
+            6'b110000: S8_OUTPUT = 4'h2;
+            6'b110001: S8_OUTPUT = 4'h1;
+            6'b110010: S8_OUTPUT = 4'hE;
+            6'b110011: S8_OUTPUT = 4'h7;
+            6'b110100: S8_OUTPUT = 4'h4;
+            6'b110101: S8_OUTPUT = 4'hA;
+            6'b110110: S8_OUTPUT = 4'h8;
+            6'b110111: S8_OUTPUT = 4'hD;
+            6'b111000: S8_OUTPUT = 4'hF;
+            6'b111001: S8_OUTPUT = 4'hC;
+            6'b111010: S8_OUTPUT = 4'h9;
+            6'b111011: S8_OUTPUT = 4'h0;
+            6'b111100: S8_OUTPUT = 4'h3;
+            6'b111101: S8_OUTPUT = 4'h5;
+            6'b111110: S8_OUTPUT = 4'h6;
+            6'b111111: S8_OUTPUT = 4'hB;
+            default:   S8_OUTPUT = 4'h0;
+				
+         endcase
+			
+	end
+	
+endmodule 	   
+
+
+module Swap(LEFT16, RIGHT16, LEFT_SWAP, RIGHT_SWAP); 
+ 
+input  [32 : 1]LEFT16; 
+ 
+input  [32 : 1]RIGHT16; 
+ 
+output [32 : 1]LEFT_SWAP; 
+ 
+output [32 : 1]RIGHT_SWAP; 
+ 
+wire   [32 : 1]LEFT16; 
+ 
+wire   [32 : 1]RIGHT16; 
+ 
+wire   [32 : 1]LEFT_SWAP; 
+ 
+wire   [32 : 1]RIGHT_SWAP; 
+ 
+assign LEFT_SWAP  = RIGHT16; 
+ 
+assign RIGHT_SWAP = LEFT16; 
+ 
+endmodule
+
+module Xor_Operation(EXPANSION_PERMUTATION, SUBKEY, SBOX1_INPUT, SBOX2_INPUT, SBOX3_INPUT, 
+                     SBOX4_INPUT, SBOX5_INPUT, SBOX6_INPUT, SBOX7_INPUT, SBOX8_INPUT);
+    
+	 input    [48 : 1] EXPANSION_PERMUTATION;
+    
+	 input    [48 : 1] SUBKEY;
+    
+	 output   [6 : 1]  SBOX1_INPUT; 
+	  
+	 output   [6 : 1]  SBOX2_INPUT; 
+	  
+	 output   [6 : 1]  SBOX3_INPUT; 
+	  
+	 output   [6 : 1]  SBOX4_INPUT; 
+	  
+	 output   [6 : 1]  SBOX5_INPUT; 
+	  
+	 output   [6 : 1]  SBOX6_INPUT; 
+	  
+	 output   [6 : 1]  SBOX7_INPUT; 
+	  
+	 output   [6 : 1]  SBOX8_INPUT;
+	 
+	 wire     [48 : 1] EXPANSION_PERMUTATION;
+	 
+	 wire     [48 : 1] SUBKEY;
+	 
+	 wire     [48 : 1] SBOX_INPUT;
+	 
+	 assign   SBOX_INPUT    =  EXPANSION_PERMUTATION ^ SUBKEY; 
+	  
+	 assign   SBOX1_INPUT   =  SBOX_INPUT[48 : 43];
+	  
+	 assign   SBOX2_INPUT   =  SBOX_INPUT[42 : 37]; 
+	  
+	 assign   SBOX3_INPUT   =  SBOX_INPUT[36 : 31]; 
+	  
+	 assign   SBOX4_INPUT   =  SBOX_INPUT[30 : 25]; 
+	  
+	 assign   SBOX5_INPUT   =  SBOX_INPUT[24 : 19]; 
+	   
+	 assign   SBOX6_INPUT   =  SBOX_INPUT[18 : 13]; 
+		 
+	 assign   SBOX7_INPUT   =  SBOX_INPUT[12 : 7]; 
+	  
+	 assign   SBOX8_INPUT   =  SBOX_INPUT[6 : 1]; 
+		   
+		  
+endmodule
+
+module Xor_Permutation(PERMUTATION_OUTPUT, LEFT, RIGHT_REG);
+
+  input  [32 : 1]PERMUTATION_OUTPUT;
+  
+  input  [32 : 1]LEFT;
+  
+ // input  [32 : 1]RIGHT_REG1;
+  
+ // output [32 : 1]LEFT_REG2;
+  
+  output [32 : 1]RIGHT_REG;
+  
+  wire   [32 : 1]PERMUTATION_OUTPUT;
+  
+  wire   [32 : 1]LEFT;
+  
+ // wire   [32 : 1]RIGHT_REG1;
+  
+ // reg    [32 : 1]LEFT_REG2;
+  
+  reg    [32 : 1]RIGHT_REG;
+  
+  always @(PERMUTATION_OUTPUT or LEFT or RIGHT_REG)
+  
+     begin
+	  
+//	     LEFT_REG2  = RIGHT_REG1;
+	  
+	     RIGHT_REG = PERMUTATION_OUTPUT ^ LEFT;
+		  
+     end
+
+endmodule 
+
+module control_unit(in,out,clk);
+input [0:4] in;
+input clk;
+wire [0:4]in;
+wire clk;
+output [0:22]out;
+reg [0:22]out;
+
+always @ (posedge clk)
+
+if(in == 5'b00_000)
+begin
+out=23'b1010_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b00_001)
+begin
+out=23'b0000_0000_0000_0110_0000_000;
+end
+
+else if(in == 5'b00_010)
+begin
+out=23'b0101_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b00_011)
+begin
+out=23'b0000_0000_0001_0000_0000_000;
+end
+
+else if(in == 5'b00_100)
+begin
+out=23'b0000_0000_0010_0000_0000_000;
+end
+
+else if(in == 5'b00_101)
+begin
+out=23'b1010_1000_0000_0000_0000_000;
+end
+
+else if(in == 5'b00_110)
+begin
+out=23'b0000_0000_0000_0110_0000_000;
+end
+
+else if(in == 5'b00_111)
+begin
+out=23'b0101_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b01_000)
+begin
+out=23'b0000_0000_0000_0000_0000_100;
+end
+
+else if(in == 5'b01_001)
+begin
+out=23'b0000_0000_0000_0001_1000_000;
+end
+
+else if(in == 5'b01_010)
+begin
+out=23'b0000_0100_0000_0000_0001_000;
+end
+
+else if(in == 5'b01_011)
+begin
+out=23'b0000_0000_0000_0000_0000_001;
+end
+
+else if(in == 5'b01_100)
+begin
+out=23'b0000_0000_0000_0110_0000_000;
+end
+
+else if(in == 5'b01_101)
+begin
+out=23'b0001_0000_0000_0000_0000_010;
+end
+
+else if(in == 5'b01_110)
+begin
+out=23'b0000_0000_0001_0000_0000_000;
+end
+
+else if(in == 5'b01_111)
+begin
+out=23'b0000_0000_0010_0000_0000_000;
+end
+
+else if(in == 5'b10_000)
+begin
+out=23'b0000_0010_1000_0000_0000_000;
+end
+
+else if(in == 5'b10_001)
+begin
+out=23'b0000_0000_0000_0000_0010_000;
+end
+
+else if(in == 5'b10_010)
+begin
+out=23'b0000_0001_0100_0000_0100_000;
+end
+
+else if(in == 5'b10_011)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b10_100)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b10_101)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b10_110)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b10_111)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b11_000)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b11_001)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b11_010)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b11_011)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b11_100)
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end
+
+else if(in == 5'b11_101)
+begin
+out=23'b0000_0000_0000_1000_0000_000;
+end
+
+
+else
+begin
+out=23'b0000_0000_0000_0000_0000_000;
+end	
+ 
+endmodule
+
+module aes_cipher_top(clk, rst, ld, done, key, text_in, text_out,test1 );
+input		clk, rst;
+input		ld;
+output		done;
+output [3:0]test1;
+reg    [3:0]test1;
+input	[127:0]	key;
+input	[127:0]	text_in;
+output	[127:0]	text_out;
+
+
+reg [127:0] text_out1; 
+////////////////////////////////////////////////////////////////////
+//
+// Local Wires
+//
+
+wire	[31:0]	w0, w1, w2, w3;
+reg	[127:0]	text_in_r;
+reg	[127:0]	text_out;
+reg	[7:0]	sa00, sa01, sa02, sa03;
+reg	[7:0]	sa10, sa11, sa12, sa13;
+reg	[7:0]	sa20, sa21, sa22, sa23;
+reg	[7:0]	sa30, sa31, sa32, sa33;
+wire	[7:0]	sa00_next, sa01_next, sa02_next, sa03_next;
+wire	[7:0]	sa10_next, sa11_next, sa12_next, sa13_next;
+wire	[7:0]	sa20_next, sa21_next, sa22_next, sa23_next;
+wire	[7:0]	sa30_next, sa31_next, sa32_next, sa33_next;
+wire	[7:0]	sa00_sub, sa01_sub, sa02_sub, sa03_sub;
+wire	[7:0]	sa10_sub, sa11_sub, sa12_sub, sa13_sub;
+wire	[7:0]	sa20_sub, sa21_sub, sa22_sub, sa23_sub;
+wire	[7:0]	sa30_sub, sa31_sub, sa32_sub, sa33_sub;
+wire	[7:0]	sa00_sr, sa01_sr, sa02_sr, sa03_sr;
+wire	[7:0]	sa10_sr, sa11_sr, sa12_sr, sa13_sr;
+wire	[7:0]	sa20_sr, sa21_sr, sa22_sr, sa23_sr;
+wire	[7:0]	sa30_sr, sa31_sr, sa32_sr, sa33_sr;
+wire	[7:0]	sa00_mc, sa01_mc, sa02_mc, sa03_mc;
+wire	[7:0]	sa10_mc, sa11_mc, sa12_mc, sa13_mc;
+wire	[7:0]	sa20_mc, sa21_mc, sa22_mc, sa23_mc;
+wire	[7:0]	sa30_mc, sa31_mc, sa32_mc, sa33_mc;
+reg		done, ld_r;
+reg	[3:0]	dcnt;
+
+////////////////////////////////////////////////////////////////////
+//
+// Misc Logic
+//
+
+always @(posedge clk)
+begin
+	if(rst)	dcnt = #1 4'h0;
+	else
+	if(ld==1) begin		dcnt = #1 4'hb;assign test1=dcnt; end
+	else
+	if(|dcnt)	dcnt = #1 dcnt - 4'h1;
+
+end
+
+always @(posedge clk) done = #1 !(|dcnt[3:1]) & dcnt[0] & !ld;
+always @(posedge clk) if(ld) text_in_r = #1 text_in;
+always @(posedge clk) ld_r = #1 ld;
+
+////////////////////////////////////////////////////////////////////
+//
+// Initial Permutation (AddRoundKey)
+//
+
+always @(posedge clk)	sa33 = #1 ld_r ? text_in_r[007:000] ^ w3[07:00] : sa33_next;
+always @(posedge clk)	sa23 = #1 ld_r ? text_in_r[015:008] ^ w3[15:08] : sa23_next;
+always @(posedge clk)	sa13 = #1 ld_r ? text_in_r[023:016] ^ w3[23:16] : sa13_next;
+always @(posedge clk)	sa03 = #1 ld_r ? text_in_r[031:024] ^ w3[31:24] : sa03_next;
+always @(posedge clk)	sa32 = #1 ld_r ? text_in_r[039:032] ^ w2[07:00] : sa32_next;
+always @(posedge clk)	sa22 = #1 ld_r ? text_in_r[047:040] ^ w2[15:08] : sa22_next;
+always @(posedge clk)	sa12 = #1 ld_r ? text_in_r[055:048] ^ w2[23:16] : sa12_next;
+always @(posedge clk)	sa02 = #1 ld_r ? text_in_r[063:056] ^ w2[31:24] : sa02_next;
+always @(posedge clk)	sa31 = #1 ld_r ? text_in_r[071:064] ^ w1[07:00] : sa31_next;
+always @(posedge clk)	sa21 = #1 ld_r ? text_in_r[079:072] ^ w1[15:08] : sa21_next;
+always @(posedge clk)	sa11 = #1 ld_r ? text_in_r[087:080] ^ w1[23:16] : sa11_next;
+always @(posedge clk)	sa01 = #1 ld_r ? text_in_r[095:088] ^ w1[31:24] : sa01_next;
+always @(posedge clk)	sa30 = #1 ld_r ? text_in_r[103:096] ^ w0[07:00] : sa30_next;
+always @(posedge clk)	sa20 = #1 ld_r ? text_in_r[111:104] ^ w0[15:08] : sa20_next;
+always @(posedge clk)	sa10 = #1 ld_r ? text_in_r[119:112] ^ w0[23:16] : sa10_next;
+always @(posedge clk)	sa00 = #1 ld_r ? text_in_r[127:120] ^ w0[31:24] : sa00_next;
+
+////////////////////////////////////////////////////////////////////
+//
+// Round Permutations
+//
+
+assign sa00_sr = sa00_sub;
+assign sa01_sr = sa01_sub;
+assign sa02_sr = sa02_sub;
+assign sa03_sr = sa03_sub;
+assign sa10_sr = sa11_sub;
+assign sa11_sr = sa12_sub;
+assign sa12_sr = sa13_sub;
+assign sa13_sr = sa10_sub;
+assign sa20_sr = sa22_sub;
+assign sa21_sr = sa23_sub;
+assign sa22_sr = sa20_sub;
+assign sa23_sr = sa21_sub;
+assign sa30_sr = sa33_sub;
+assign sa31_sr = sa30_sub;
+assign sa32_sr = sa31_sub;
+assign sa33_sr = sa32_sub;
+assign {sa00_mc, sa10_mc, sa20_mc, sa30_mc}  = mix_col(sa00_sr,sa10_sr,sa20_sr,sa30_sr);
+assign {sa01_mc, sa11_mc, sa21_mc, sa31_mc}  = mix_col(sa01_sr,sa11_sr,sa21_sr,sa31_sr);
+assign {sa02_mc, sa12_mc, sa22_mc, sa32_mc}  = mix_col(sa02_sr,sa12_sr,sa22_sr,sa32_sr);
+assign {sa03_mc, sa13_mc, sa23_mc, sa33_mc}  = mix_col(sa03_sr,sa13_sr,sa23_sr,sa33_sr);
+assign sa00_next = sa00_mc ^ w0[31:24];
+assign sa01_next = sa01_mc ^ w1[31:24];
+assign sa02_next = sa02_mc ^ w2[31:24];
+assign sa03_next = sa03_mc ^ w3[31:24];
+assign sa10_next = sa10_mc ^ w0[23:16];
+assign sa11_next = sa11_mc ^ w1[23:16];
+assign sa12_next = sa12_mc ^ w2[23:16];
+assign sa13_next = sa13_mc ^ w3[23:16];
+assign sa20_next = sa20_mc ^ w0[15:08];
+assign sa21_next = sa21_mc ^ w1[15:08];
+assign sa22_next = sa22_mc ^ w2[15:08];
+assign sa23_next = sa23_mc ^ w3[15:08];
+assign sa30_next = sa30_mc ^ w0[07:00];
+assign sa31_next = sa31_mc ^ w1[07:00];
+assign sa32_next = sa32_mc ^ w2[07:00];
+assign sa33_next = sa33_mc ^ w3[07:00];
+
+////////////////////////////////////////////////////////////////////
+//
+// Final text output
+//
+
+always @(posedge clk) text_out1[127:120] = #1 sa00_sr ^ w0[31:24];
+always @(posedge clk) text_out1[095:088] = #1 sa01_sr ^ w1[31:24];
+always @(posedge clk) text_out1[063:056] = #1 sa02_sr ^ w2[31:24];
+always @(posedge clk) text_out1[031:024] = #1 sa03_sr ^ w3[31:24];
+always @(posedge clk) text_out1[119:112] = #1 sa10_sr ^ w0[23:16];
+always @(posedge clk) text_out1[087:080] = #1 sa11_sr ^ w1[23:16];
+always @(posedge clk) text_out1[055:048] = #1 sa12_sr ^ w2[23:16];
+always @(posedge clk) text_out1[023:016] = #1 sa13_sr ^ w3[23:16];
+always @(posedge clk) text_out1[111:104] = #1 sa20_sr ^ w0[15:08];
+always @(posedge clk) text_out1[079:072] = #1 sa21_sr ^ w1[15:08];
+always @(posedge clk) text_out1[047:040] = #1 sa22_sr ^ w2[15:08];
+always @(posedge clk) text_out1[015:008] = #1 sa23_sr ^ w3[15:08];
+always @(posedge clk) text_out1[103:096] = #1 sa30_sr ^ w0[07:00];
+always @(posedge clk) text_out1[071:064] = #1 sa31_sr ^ w1[07:00];
+always @(posedge clk) text_out1[039:032] = #1 sa32_sr ^ w2[07:00];
+always @(posedge clk) text_out1[007:000] = #1 sa33_sr ^ w3[07:00];
+
+
+always @(posedge clk)
+begin
+if(done==1)begin
+text_out[127:120]=text_out1[127:120];
+text_out[095:088]=text_out1[095:088];
+text_out[063:056]=text_out1[063:056];
+text_out[031:024]=text_out1[031:024];
+text_out[119:112]=text_out1[119:112];
+text_out[087:080]=text_out1[087:080];
+text_out[055:048]=text_out1[055:048];
+text_out[023:016]=text_out1[023:016];
+text_out[111:104]=text_out1[111:104];
+text_out[079:072]=text_out1[079:072];
+text_out[047:040]=text_out1[047:040];
+text_out[015:008]=text_out1[015:008];
+text_out[103:096]=text_out1[103:096];
+text_out[071:064]=text_out1[071:064];
+text_out[039:032]=text_out1[039:032];
+text_out[007:000]=text_out1[007:000];
+end
+
+else
+begin
+text_out=128'h0;end
+end
+
+
+////////////////////////////////////////////////////////////////////
+//
+// Generic Functions
+//
+
+function [31:0] mix_col;
+input	[7:0]	s0,s1,s2,s3;
+reg	[7:0]	s0_o,s1_o,s2_o,s3_o;
+begin
+mix_col[31:24]=xtime(s0)^xtime(s1)^s1^s2^s3;
+mix_col[23:16]=s0^xtime(s1)^xtime(s2)^s2^s3;
+mix_col[15:08]=s0^s1^xtime(s2)^xtime(s3)^s3;
+mix_col[07:00]=xtime(s0)^s0^s1^s2^xtime(s3);
+end
+endfunction
+
+function [7:0] xtime;
+input [7:0] b; xtime={b[6:0],1'b0}^(8'h1b&{8{b[7]}});
+endfunction
+
+////////////////////////////////////////////////////////////////////
+//
+// Modules
+//
+
+aes_key_expand_128 u0(
+	.clk(		clk	),
+	.kld(		ld	),
+	.key(		key	),
+	.wo_0(		w0	),
+	.wo_1(		w1	),
+	.wo_2(		w2	),
+	.wo_3(		w3	));
+
+aes_sbox us00(	.a(	sa00	), .d(	sa00_sub	));
+aes_sbox us01(	.a(	sa01	), .d(	sa01_sub	));
+aes_sbox us02(	.a(	sa02	), .d(	sa02_sub	));
+aes_sbox us03(	.a(	sa03	), .d(	sa03_sub	));
+aes_sbox us10(	.a(	sa10	), .d(	sa10_sub	));
+aes_sbox us11(	.a(	sa11	), .d(	sa11_sub	));
+aes_sbox us12(	.a(	sa12	), .d(	sa12_sub	));
+aes_sbox us13(	.a(	sa13	), .d(	sa13_sub	));
+aes_sbox us20(	.a(	sa20	), .d(	sa20_sub	));
+aes_sbox us21(	.a(	sa21	), .d(	sa21_sub	));
+aes_sbox us22(	.a(	sa22	), .d(	sa22_sub	));
+aes_sbox us23(	.a(	sa23	), .d(	sa23_sub	));
+aes_sbox us30(	.a(	sa30	), .d(	sa30_sub	));
+aes_sbox us31(	.a(	sa31	), .d(	sa31_sub	));
+aes_sbox us32(	.a(	sa32	), .d(	sa32_sub	));
+aes_sbox us33(	.a(	sa33	), .d(	sa33_sub	));
+
+endmodule
+
+
+module aes_key_expand_128(clk, kld, key, wo_0, wo_1, wo_2, wo_3);
+input		clk;
+input		kld;
+input	[127:0]	key;
+output	[31:0]	wo_0, wo_1, wo_2, wo_3;
+reg	[31:0]	w[3:0];
+wire	[31:0]	tmp_w;
+wire	[31:0]	subword;
+wire	[31:0]	rcon;
+
+assign wo_0 = w[0];
+assign wo_1 = w[1];
+assign wo_2 = w[2];
+assign wo_3 = w[3];
+always @(posedge clk)	w[0] = #1 kld ? key[127:096] : w[0]^subword^rcon;
+always @(posedge clk)	w[1] = #1 kld ? key[095:064] : w[0]^w[1]^subword^rcon;
+always @(posedge clk)	w[2] = #1 kld ? key[063:032] : w[0]^w[2]^w[1]^subword^rcon;
+always @(posedge clk)	w[3] = #1 kld ? key[031:000] : w[0]^w[3]^w[2]^w[1]^subword^rcon;
+assign tmp_w = w[3];
+aes_sbox u0(	.a(tmp_w[23:16]), .d(subword[31:24]));
+aes_sbox u1(	.a(tmp_w[15:08]), .d(subword[23:16]));
+aes_sbox u2(	.a(tmp_w[07:00]), .d(subword[15:08]));
+aes_sbox u3(	.a(tmp_w[31:24]), .d(subword[07:00]));
+aes_rcon r0(	.clk(clk), .kld(kld), .out(rcon));
+endmodule
+
+
+module aes_rcon(clk, kld, out);
+input		clk;
+input		kld;
+output	[31:0]	out;
+reg	[31:0]	out;
+reg	[3:0]	rcnt;
+wire	[3:0]	rcnt_next;
+
+always @(posedge clk)
+	if(kld)		out = #1 32'h01_00_00_00;
+	else		out = #1 frcon(rcnt_next);
+
+assign rcnt_next = rcnt + 4'h1;
+always @(posedge clk)
+	if(kld)		rcnt = #1 4'h0;
+	else		rcnt = #1 rcnt_next;
+
+function [31:0]	frcon;
+input	[3:0]	i;
+case(i)	// synopsys parallel_case
+   4'h0: frcon=32'h01_00_00_00;
+   4'h1: frcon=32'h02_00_00_00;
+   4'h2: frcon=32'h04_00_00_00;
+   4'h3: frcon=32'h08_00_00_00;
+   4'h4: frcon=32'h10_00_00_00;
+   4'h5: frcon=32'h20_00_00_00;
+   4'h6: frcon=32'h40_00_00_00;
+   4'h7: frcon=32'h80_00_00_00;
+   4'h8: frcon=32'h1b_00_00_00;
+   4'h9: frcon=32'h36_00_00_00;
+   default: frcon=32'h00_00_00_00;
+endcase
+endfunction
+
+endmodule
+
+
+module aes_sbox(a,d);
+input	[7:0]	a;
+output	[7:0]	d;
+reg	[7:0]	d;
+
+always @(a)
+	case(a)		// synopsys full_case parallel_case
+	   8'h00: d=8'h63;
+	   8'h01: d=8'h7c;
+	   8'h02: d=8'h77;
+	   8'h03: d=8'h7b;
+	   8'h04: d=8'hf2;
+	   8'h05: d=8'h6b;
+	   8'h06: d=8'h6f;
+	   8'h07: d=8'hc5;
+	   8'h08: d=8'h30;
+	   8'h09: d=8'h01;
+	   8'h0a: d=8'h67;
+	   8'h0b: d=8'h2b;
+	   8'h0c: d=8'hfe;
+	   8'h0d: d=8'hd7;
+	   8'h0e: d=8'hab;
+	   8'h0f: d=8'h76;
+	   8'h10: d=8'hca;
+	   8'h11: d=8'h82;
+	   8'h12: d=8'hc9;
+	   8'h13: d=8'h7d;
+	   8'h14: d=8'hfa;
+	   8'h15: d=8'h59;
+	   8'h16: d=8'h47;
+	   8'h17: d=8'hf0;
+	   8'h18: d=8'had;
+	   8'h19: d=8'hd4;
+	   8'h1a: d=8'ha2;
+	   8'h1b: d=8'haf;
+	   8'h1c: d=8'h9c;
+	   8'h1d: d=8'ha4;
+	   8'h1e: d=8'h72;
+	   8'h1f: d=8'hc0;
+	   8'h20: d=8'hb7;
+	   8'h21: d=8'hfd;
+	   8'h22: d=8'h93;
+	   8'h23: d=8'h26;
+	   8'h24: d=8'h36;
+	   8'h25: d=8'h3f;
+	   8'h26: d=8'hf7;
+	   8'h27: d=8'hcc;
+	   8'h28: d=8'h34;
+	   8'h29: d=8'ha5;
+	   8'h2a: d=8'he5;
+	   8'h2b: d=8'hf1;
+	   8'h2c: d=8'h71;
+	   8'h2d: d=8'hd8;
+	   8'h2e: d=8'h31;
+	   8'h2f: d=8'h15;
+	   8'h30: d=8'h04;
+	   8'h31: d=8'hc7;
+	   8'h32: d=8'h23;
+	   8'h33: d=8'hc3;
+	   8'h34: d=8'h18;
+	   8'h35: d=8'h96;
+	   8'h36: d=8'h05;
+	   8'h37: d=8'h9a;
+	   8'h38: d=8'h07;
+	   8'h39: d=8'h12;
+	   8'h3a: d=8'h80;
+	   8'h3b: d=8'he2;
+	   8'h3c: d=8'heb;
+	   8'h3d: d=8'h27;
+	   8'h3e: d=8'hb2;
+	   8'h3f: d=8'h75;
+	   8'h40: d=8'h09;
+	   8'h41: d=8'h83;
+	   8'h42: d=8'h2c;
+	   8'h43: d=8'h1a;
+	   8'h44: d=8'h1b;
+	   8'h45: d=8'h6e;
+	   8'h46: d=8'h5a;
+	   8'h47: d=8'ha0;
+	   8'h48: d=8'h52;
+	   8'h49: d=8'h3b;
+	   8'h4a: d=8'hd6;
+	   8'h4b: d=8'hb3;
+	   8'h4c: d=8'h29;
+	   8'h4d: d=8'he3;
+	   8'h4e: d=8'h2f;
+	   8'h4f: d=8'h84;
+	   8'h50: d=8'h53;
+	   8'h51: d=8'hd1;
+	   8'h52: d=8'h00;
+	   8'h53: d=8'hed;
+	   8'h54: d=8'h20;
+	   8'h55: d=8'hfc;
+	   8'h56: d=8'hb1;
+	   8'h57: d=8'h5b;
+	   8'h58: d=8'h6a;
+	   8'h59: d=8'hcb;
+	   8'h5a: d=8'hbe;
+	   8'h5b: d=8'h39;
+	   8'h5c: d=8'h4a;
+	   8'h5d: d=8'h4c;
+	   8'h5e: d=8'h58;
+	   8'h5f: d=8'hcf;
+	   8'h60: d=8'hd0;
+	   8'h61: d=8'hef;
+	   8'h62: d=8'haa;
+	   8'h63: d=8'hfb;
+	   8'h64: d=8'h43;
+	   8'h65: d=8'h4d;
+	   8'h66: d=8'h33;
+	   8'h67: d=8'h85;
+	   8'h68: d=8'h45;
+	   8'h69: d=8'hf9;
+	   8'h6a: d=8'h02;
+	   8'h6b: d=8'h7f;
+	   8'h6c: d=8'h50;
+	   8'h6d: d=8'h3c;
+	   8'h6e: d=8'h9f;
+	   8'h6f: d=8'ha8;
+	   8'h70: d=8'h51;
+	   8'h71: d=8'ha3;
+	   8'h72: d=8'h40;
+	   8'h73: d=8'h8f;
+	   8'h74: d=8'h92;
+	   8'h75: d=8'h9d;
+	   8'h76: d=8'h38;
+	   8'h77: d=8'hf5;
+	   8'h78: d=8'hbc;
+	   8'h79: d=8'hb6;
+	   8'h7a: d=8'hda;
+	   8'h7b: d=8'h21;
+	   8'h7c: d=8'h10;
+	   8'h7d: d=8'hff;
+	   8'h7e: d=8'hf3;
+	   8'h7f: d=8'hd2;
+	   8'h80: d=8'hcd;
+	   8'h81: d=8'h0c;
+	   8'h82: d=8'h13;
+	   8'h83: d=8'hec;
+	   8'h84: d=8'h5f;
+	   8'h85: d=8'h97;
+	   8'h86: d=8'h44;
+	   8'h87: d=8'h17;
+	   8'h88: d=8'hc4;
+	   8'h89: d=8'ha7;
+	   8'h8a: d=8'h7e;
+	   8'h8b: d=8'h3d;
+	   8'h8c: d=8'h64;
+	   8'h8d: d=8'h5d;
+	   8'h8e: d=8'h19;
+	   8'h8f: d=8'h73;
+	   8'h90: d=8'h60;
+	   8'h91: d=8'h81;
+	   8'h92: d=8'h4f;
+	   8'h93: d=8'hdc;
+	   8'h94: d=8'h22;
+	   8'h95: d=8'h2a;
+	   8'h96: d=8'h90;
+	   8'h97: d=8'h88;
+	   8'h98: d=8'h46;
+	   8'h99: d=8'hee;
+	   8'h9a: d=8'hb8;
+	   8'h9b: d=8'h14;
+	   8'h9c: d=8'hde;
+	   8'h9d: d=8'h5e;
+	   8'h9e: d=8'h0b;
+	   8'h9f: d=8'hdb;
+	   8'ha0: d=8'he0;
+	   8'ha1: d=8'h32;
+	   8'ha2: d=8'h3a;
+	   8'ha3: d=8'h0a;
+	   8'ha4: d=8'h49;
+	   8'ha5: d=8'h06;
+	   8'ha6: d=8'h24;
+	   8'ha7: d=8'h5c;
+	   8'ha8: d=8'hc2;
+	   8'ha9: d=8'hd3;
+	   8'haa: d=8'hac;
+	   8'hab: d=8'h62;
+	   8'hac: d=8'h91;
+	   8'had: d=8'h95;
+	   8'hae: d=8'he4;
+	   8'haf: d=8'h79;
+	   8'hb0: d=8'he7;
+	   8'hb1: d=8'hc8;
+	   8'hb2: d=8'h37;
+	   8'hb3: d=8'h6d;
+	   8'hb4: d=8'h8d;
+	   8'hb5: d=8'hd5;
+	   8'hb6: d=8'h4e;
+	   8'hb7: d=8'ha9;
+	   8'hb8: d=8'h6c;
+	   8'hb9: d=8'h56;
+	   8'hba: d=8'hf4;
+	   8'hbb: d=8'hea;
+	   8'hbc: d=8'h65;
+	   8'hbd: d=8'h7a;
+	   8'hbe: d=8'hae;
+	   8'hbf: d=8'h08;
+	   8'hc0: d=8'hba;
+	   8'hc1: d=8'h78;
+	   8'hc2: d=8'h25;
+	   8'hc3: d=8'h2e;
+	   8'hc4: d=8'h1c;
+	   8'hc5: d=8'ha6;
+	   8'hc6: d=8'hb4;
+	   8'hc7: d=8'hc6;
+	   8'hc8: d=8'he8;
+	   8'hc9: d=8'hdd;
+	   8'hca: d=8'h74;
+	   8'hcb: d=8'h1f;
+	   8'hcc: d=8'h4b;
+	   8'hcd: d=8'hbd;
+	   8'hce: d=8'h8b;
+	   8'hcf: d=8'h8a;
+	   8'hd0: d=8'h70;
+	   8'hd1: d=8'h3e;
+	   8'hd2: d=8'hb5;
+	   8'hd3: d=8'h66;
+	   8'hd4: d=8'h48;
+	   8'hd5: d=8'h03;
+	   8'hd6: d=8'hf6;
+	   8'hd7: d=8'h0e;
+	   8'hd8: d=8'h61;
+	   8'hd9: d=8'h35;
+	   8'hda: d=8'h57;
+	   8'hdb: d=8'hb9;
+	   8'hdc: d=8'h86;
+	   8'hdd: d=8'hc1;
+	   8'hde: d=8'h1d;
+	   8'hdf: d=8'h9e;
+	   8'he0: d=8'he1;
+	   8'he1: d=8'hf8;
+	   8'he2: d=8'h98;
+	   8'he3: d=8'h11;
+	   8'he4: d=8'h69;
+	   8'he5: d=8'hd9;
+	   8'he6: d=8'h8e;
+	   8'he7: d=8'h94;
+	   8'he8: d=8'h9b;
+	   8'he9: d=8'h1e;
+	   8'hea: d=8'h87;
+	   8'heb: d=8'he9;
+	   8'hec: d=8'hce;
+	   8'hed: d=8'h55;
+	   8'hee: d=8'h28;
+	   8'hef: d=8'hdf;
+	   8'hf0: d=8'h8c;
+	   8'hf1: d=8'ha1;
+	   8'hf2: d=8'h89;
+	   8'hf3: d=8'h0d;
+	   8'hf4: d=8'hbf;
+	   8'hf5: d=8'he6;
+	   8'hf6: d=8'h42;
+	   8'hf7: d=8'h68;
+	   8'hf8: d=8'h41;
+	   8'hf9: d=8'h99;
+	   8'hfa: d=8'h2d;
+	   8'hfb: d=8'h0f;
+	   8'hfc: d=8'hb0;
+	   8'hfd: d=8'h54;
+	   8'hfe: d=8'hbb;
+	   8'hff: d=8'h16;
+	endcase
+
+endmodule
+
+
+module Des_decoder_Top(CLK, RST, CHIP_SELECT_BAR,KEY_INPUT, PLAIN_TEXT, CIPHER_TEXT); 
+ 
+input   CLK; 
+ 
+input   RST; 
+ 
+input   CHIP_SELECT_BAR; 
+ 
+input   [64:1] KEY_INPUT; 
+ 
+input   [64 : 1]PLAIN_TEXT; 
+ 
+output  [64 : 1]CIPHER_TEXT; 
+ 
+wire    CLK; 
+ 
+wire    RST; 
+ 
+wire    CHIP_SELECT_BAR; 
+ 
+wire    KEY_INPUT; 
+ 
+wire    [64 : 1] PLAIN_TEXT; 
+ 
+wire    [64 : 1] CIPHER_TEXT; 
+ 
+wire    [48 : 1] KEY1,KEY2,KEY3,KEY4,KEY5,KEY6,KEY7,KEY8,KEY9,KEY10,KEY11,KEY12,KEY13,KEY14,KEY15, 
+                 KEY16; 
+					   
+wire    [32 : 1] LEFT1,LEFT2,LEFT3,LEFT4,LEFT5,LEFT6,LEFT7,LEFT8,LEFT9,LEFT10,LEFT11,LEFT12,LEFT13, 
+                 LEFT14,LEFT15,LEFT16; 
+ 
+wire    [32 : 1] RIGHT1,RIGHT2,RIGHT3,RIGHT4,RIGHT5,RIGHT6,RIGHT7,RIGHT8,RIGHT9,RIGHT10,RIGHT11, 
+                 RIGHT12,RIGHT13,RIGHT14,RIGHT15,RIGHT16;					   
+ 
+wire    [32 : 1] LEFT,RIGHT; 
+ 
+wire    [32 : 1] LEFT_SWAP,RIGHT_SWAP; 
+ 
+ Initial_Permutation ip ( 
+                         .CHIP_SELECT_BAR(CHIP_SELECT_BAR), 
+								 .PLAIN_TEXT(PLAIN_TEXT), 
+								 .LEFT(LEFT), 
+								 .RIGHT(RIGHT) 
+								); 
+								 
+ Key_Top key            ( 
+                         .CHIP_SELECT_BAR(CHIP_SELECT_BAR), 
+								 .KEY_INPUT(KEY_INPUT), 
+								 .KEY1(KEY1), 
+								 .KEY2(KEY2), 
+								 .KEY3(KEY3), 
+								 .KEY4(KEY4), 
+								 .KEY5(KEY5), 
+								 .KEY6(KEY6), 
+								 .KEY7(KEY7), 
+								 .KEY8(KEY8), 
+								 .KEY9(KEY9), 
+								 .KEY10(KEY10), 
+								 .KEY11(KEY11), 
+								 .KEY12(KEY12), 
+								 .KEY13(KEY13), 
+								 .KEY14(KEY14), 
+								 .KEY15(KEY15), 
+								 .KEY16(KEY16) 
+                        ); 
+ 
+ Round1 round1          ( 
+                        .CLK(CLK), 
+								.RST(RST), 
+								.LEFT(LEFT), 
+								.RIGHT(RIGHT), 
+								.KEY(KEY16), 
+								.LEFT1(LEFT1), 
+								.RIGHT1(RIGHT1) 
+								);								 
+								 
+ Round1 round2          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT1),
+								.RIGHT(RIGHT1),
+								.KEY(KEY15),
+								.LEFT1(LEFT2),
+								.RIGHT1(RIGHT2)
+								);							 
+ 
+ Round1 round3          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT2),
+								.RIGHT(RIGHT2),
+								.KEY(KEY14),
+								.LEFT1(LEFT3),
+								.RIGHT1(RIGHT3)
+								);							 
+ 
+ Round1 round4          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT3),
+								.RIGHT(RIGHT3),
+								.KEY(KEY13),
+								.LEFT1(LEFT4),
+								.RIGHT1(RIGHT4)
+								);							 
+ 
+ Round1 round5          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT4),
+								.RIGHT(RIGHT4),
+								.KEY(KEY12),
+								.LEFT1(LEFT5),
+								.RIGHT1(RIGHT5)
+								);							 
+ 
+ Round1 round6          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT5),
+								.RIGHT(RIGHT5),
+								.KEY(KEY11),
+								.LEFT1(LEFT6),
+								.RIGHT1(RIGHT6)
+								);							 
+ 
+ Round1 round7          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT6),
+								.RIGHT(RIGHT6),
+								.KEY(KEY10),
+								.LEFT1(LEFT7),
+								.RIGHT1(RIGHT7)
+								);							 
+ 
+ Round1 round8          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT7),
+								.RIGHT(RIGHT7),
+								.KEY(KEY9),
+								.LEFT1(LEFT8),
+								.RIGHT1(RIGHT8)
+								);							 
+ 
+ Round1 round9          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT8),
+								.RIGHT(RIGHT8),
+								.KEY(KEY8),
+								.LEFT1(LEFT9),
+								.RIGHT1(RIGHT9)
+								);							 
+ 
+ Round1 round10         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT9),
+								.RIGHT(RIGHT9),
+								.KEY(KEY7),
+								.LEFT1(LEFT10),
+								.RIGHT1(RIGHT10)
+								);							 
+ 
+ Round1 round11         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT10),
+								.RIGHT(RIGHT10),
+								.KEY(KEY6),
+								.LEFT1(LEFT11),
+								.RIGHT1(RIGHT11)
+								);							 
+ 
+ Round1 round12         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT11),
+								.RIGHT(RIGHT11),
+								.KEY(KEY5),
+								.LEFT1(LEFT12),
+								.RIGHT1(RIGHT12)
+								);							 
+ 
+ Round1 round13         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT12),
+								.RIGHT(RIGHT12),
+								.KEY(KEY4),
+								.LEFT1(LEFT13),
+								.RIGHT1(RIGHT13)
+								);							 
+ 
+ Round1 round14         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT13),
+								.RIGHT(RIGHT13),
+								.KEY(KEY3),
+								.LEFT1(LEFT14),
+								.RIGHT1(RIGHT14)
+								);							 
+ 
+ Round1 round15          (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT14),
+								.RIGHT(RIGHT14),
+								.KEY(KEY2),
+								.LEFT1(LEFT15),
+								.RIGHT1(RIGHT15)
+								);							 
+ 
+ Round1 round16         (
+                        .CLK(CLK),
+								.RST(RST),
+								.LEFT(LEFT15),
+								.RIGHT(RIGHT15),
+								.KEY(KEY1),
+								.LEFT1(LEFT16),
+								.RIGHT1(RIGHT16)
+								);							 
+								 
+ Swap   swap            ( 
+                         .LEFT16(LEFT16), 
+								 .RIGHT16(RIGHT16), 
+								 .LEFT_SWAP(LEFT_SWAP), 
+								 .RIGHT_SWAP(RIGHT_SWAP) 
+                         ); 
+ 
+ Inverse_Initial_Permutation iip ( 
+                                  .LEFT_SWAP(LEFT_SWAP), 
+											 .RIGHT_SWAP(RIGHT_SWAP), 
+											 .CIPHER_TEXT(CIPHER_TEXT) 
+											 ); 
+ 
+ endmodule 
